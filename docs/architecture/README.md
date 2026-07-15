@@ -3,8 +3,8 @@
 **Document set:** Complete software architecture for an enterprise hybrid restaurant ERP
 platform targeting large restaurants and restaurant chains, **Iraq-first**.
 
-**Status:** Architecture blueprint (no application code). This is the source of truth that
-implementation must follow.
+**Status:** Approved architecture blueprint and source of truth. Implementation is in progress;
+the identity foundation is implemented and linked below.
 
 ---
 
@@ -35,6 +35,11 @@ implementation must follow.
 | 05 | [Realtime & Async](05-realtime-sync-queue-ws-notify.md) | Sync engine, queue, WebSocket, notifications |
 | 06 | [Security, Logging & Audit](06-security-logging-audit.md) | Security, logging, audit |
 | 07 | [DevOps](07-devops-deployment-cicd.md) | Deployment, CI/CD |
+| 08 | [Production Database Design](database/README.md) | ER diagrams, complete schema catalog, constraints, isolation, history, sync, audit |
+
+Identity implementation references: [security and operations](../security/authentication-authorization.md),
+[API v1](../api/authentication-v1.md), [OpenAPI](../api/openapi-v1.yaml), and
+[Flutter flow](../flutter/authentication-flow.md).
 
 ---
 

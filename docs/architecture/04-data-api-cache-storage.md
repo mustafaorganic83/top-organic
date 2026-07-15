@@ -2,7 +2,8 @@
 
 ## Database Strategy
 
-**Engine:** MySQL 8 (InnoDB, `utf8mb4` / `utf8mb4_unicode_ci` for full Arabic Unicode).
+**Engine:** MySQL 8 (InnoDB, `utf8mb4` / `utf8mb4_0900_ai_ci`; binary/ASCII collation for
+identifiers and codes). Arabic search/sort behavior must be verified with production fixtures.
 
 ### Modeling Principles
 - **Scoping columns everywhere:** `tenant_id` (future SaaS) + `branch_id` on all

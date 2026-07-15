@@ -32,5 +32,7 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <!-- Test-only JWT signing key. Never reuse outside the test process. -->
+        <env name="JWT_SECRET" value="identity-tests-only-not-for-production-2026"/>
     </php>
 </phpunit>
