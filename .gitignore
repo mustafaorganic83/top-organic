@@ -1,27 +1,27 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-dist/
-*.egg-info/
-.eggs/
-
-# Virtual environments
-venv/
-env/
-.venv/
-ENV/
-
-# Django
+# Laravel / PHP
+/vendor/
+/bootstrap/cache/*.php
+/storage/*.key
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/logs/*
+/public/storage
+/public/hot
 *.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-/media/
-/staticfiles/
+
+# Node / assets
+/node_modules/
+/public/build
+npm-debug.log*
+yarn-error.log
+
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+build/
+*.iml
 
 # Environment variables
 .env
@@ -34,9 +34,7 @@ db.sqlite3-journal
 *.swp
 .DS_Store
 
-# Coverage / testing
-htmlcov/
-.coverage
-.coverage.*
-.pytest_cache/
-.tox/
+# Testing
+/.phpunit.cache
+.phpunit.result.cache
+/coverage

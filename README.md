@@ -1,8 +1,19 @@
-# Top Organic | نظام إدارة المطاعم
+# Top Organic | منصة ERP هجينة لإدارة سلاسل المطاعم
 
-A restaurant management system built with **Python + Django**.
+An **Enterprise Hybrid Restaurant ERP Platform** for large restaurant chains in Iraq,
+built with **Laravel 12 / PHP 8.3** (backend) and **Flutter** (POS / KDS / mobile).
 
-نظام متكامل لإدارة المطاعم مبني باستخدام **Python + Django**.
+منصة ERP مؤسسية هجينة لإدارة سلاسل المطاعم الكبرى في العراق، مبنية باستخدام
+**Laravel 12 / PHP 8.3** للواجهة الخلفية و**Flutter** لنقاط البيع وشاشات المطبخ والتطبيقات.
+
+---
+
+## Context | السياق
+
+- **Region:** Iraq-first — Arabic (RTL) primary, English (LTR) secondary.
+- **Defaults:** IQD currency, `Asia/Baghdad` timezone, `ar-IQ` locale.
+- **Model:** Offline-first hybrid — branch edge nodes operate fully offline; cloud is the
+  system of record. Multi-branch native, multi-tenant SaaS-ready from day one.
 
 ---
 
@@ -14,39 +25,32 @@ A restaurant management system built with **Python + Django**.
 - 💳 **Billing & Payments** — الفواتير والمدفوعات
 - 👥 **Staff Management** — إدارة الموظفين والصلاحيات
 - 📊 **Sales Reports** — تقارير المبيعات ولوحة التحكم
+- 🔄 **Offline Sync** — مزامنة موثوقة بين الفروع والسحابة
 
 ---
 
 ## Tech Stack | التقنيات
 
-- **Backend:** Python 3.11+ / Django 5.x
-- **Database:** SQLite (development) → PostgreSQL (production)
-- **Admin Panel:** Django Admin
+- **Backend:** PHP 8.3 / Laravel 12
+- **Database:** MySQL · **Cache/Queue/Locks:** Redis
+- **Realtime:** Laravel Reverb (WebSockets) · **Queues:** Horizon
+- **Clients:** Flutter (POS / KDS / mobile) over REST API
+- **Delivery:** Docker · GitHub Actions CI/CD
 
 ---
 
-## Getting Started | البدء
+## Architecture | المعمارية
 
-```bash
-# Create and activate a virtual environment
-python3 -m venv venv
-source venv/bin/activate
+The full software architecture (20 sections across 8 documents) lives in
+[`docs/architecture/`](docs/architecture/README.md) — requirements, system/modular design,
+hybrid & multi-tenant strategy, data/API/cache/storage, sync/queue/WebSocket/notifications,
+security/logging/audit, and DevOps/CI-CD.
 
-# Install dependencies
-pip install -r requirements.txt
-
-# Run migrations
-python manage.py migrate
-
-# Start the development server
-python manage.py runserver
-```
-
-Then open http://127.0.0.1:8000/
+المعمارية الكاملة موثّقة في [`docs/architecture/`](docs/architecture/README.md).
 
 ---
 
 ## Status | الحالة
 
-🚧 **Under active development** — يتم بناء هذا النظام تدريجياً بواسطة خبير Cosmos.
-راجع [docs/SPEC.md](docs/SPEC.md) للاطلاع على المواصفات التفصيلية.
+🚧 **Under active development** — يتم بناء هذا النظام تدريجياً بواسطة خبير Cosmos وفق
+المعمارية المعتمدة في [`docs/architecture/`](docs/architecture/README.md).
