@@ -17,6 +17,12 @@ class IdentityHttpTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_api_authentication_failure_never_redirects_to_web_login(): void
+    {
+        $this->get('/api/v1/me')->assertUnauthorized()
+            ->assertJsonPath('error.code', 'UNAUTHENTICATED');
+    }
+
     public function test_api_login_me_refresh_and_logout_use_stable_envelopes(): void
     {
         [$tenant, $branch, $user] = $this->identity();
