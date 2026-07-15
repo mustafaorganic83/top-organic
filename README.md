@@ -1,4 +1,4 @@
-# Restaurant Management System | نظام إدارة المطاعم
+# Top Organic | نظام إدارة المطاعم
 
 A restaurant management system built with **Python + Django**.
 
