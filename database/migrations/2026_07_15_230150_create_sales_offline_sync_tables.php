@@ -138,8 +138,8 @@ return new class extends Migration
             $table->json('manifest')->nullable();
             $table->timestamp('occurred_at');
             $table->unique(['tenant_id', 'change_sequence']);
-            $table->index(['tenant_id', 'entity_type', 'change_sequence']);
-            $table->index(['tenant_id', 'branch_id', 'change_sequence']);
+            $table->index(['tenant_id', 'entity_type', 'change_sequence'], 'ix_sync_changes_entity_sequence');
+            $table->index(['tenant_id', 'branch_id', 'change_sequence'], 'ix_sync_changes_branch_sequence');
         });
 
         Schema::create('sync_pull_cursors', function (Blueprint $table): void {

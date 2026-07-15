@@ -351,7 +351,7 @@ return new class extends Migration
             $table->unsignedBigInteger('lock_version')->default(0);
             $table->timestamps();
             $table->unique(['tenant_id', 'branch_id', 'order_id']);
-            $table->index(['tenant_id', 'branch_id', 'state', 'promised_at']);
+            $table->index(['tenant_id', 'branch_id', 'state', 'promised_at'], 'ix_delivery_state_promised');
         });
 
         Schema::create('delivery_events', function (Blueprint $table): void {
