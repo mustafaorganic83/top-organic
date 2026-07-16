@@ -12,7 +12,12 @@ class DiningTable extends BranchScopedModel
 
     protected function casts(): array
     {
-        return ['capacity' => 'integer', 'sort_order' => 'integer', 'lock_version' => 'integer'];
+        return [
+            'capacity' => 'integer',
+            'sort_order' => 'integer',
+            'is_reservable' => 'boolean',
+            'lock_version' => 'integer',
+        ];
     }
 
     public function floor(): BelongsTo
@@ -20,8 +25,18 @@ class DiningTable extends BranchScopedModel
         return $this->belongsTo(Floor::class);
     }
 
+    public function room(): BelongsTo
+    {
+        return $this->belongsTo(Room::class);
+    }
+
     public function sessions(): HasMany
     {
         return $this->hasMany(TableSession::class);
+    }
+
+    public function reservations(): HasMany
+    {
+        return $this->hasMany(Reservation::class);
     }
 }

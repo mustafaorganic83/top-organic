@@ -11,7 +11,8 @@ class KdsStation extends BranchScopedModel
 
     protected function casts(): array
     {
-        return ['sla_seconds' => 'integer', 'lock_version' => 'integer'];
+        return ['sla_seconds' => 'integer', 'default_prep_seconds' => 'integer', 'sort_order' => 'integer',
+            'screen_config' => 'array', 'lock_version' => 'integer'];
     }
 
     public function tickets(): HasMany

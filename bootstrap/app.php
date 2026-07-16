@@ -5,8 +5,14 @@ use App\Http\Middleware\RequirePermission;
 use App\Http\Middleware\RequirePosDevice;
 use App\Http\Middleware\ResolveContext;
 use App\Http\Middleware\SetLocale;
+use App\Modules\Accounting\Exceptions\AccountingException;
 use App\Modules\Identity\Exceptions\IdentityException;
+use App\Modules\Inventory\Exceptions\InventoryException;
+use App\Modules\Kitchen\Exceptions\KitchenException;
+use App\Modules\Menu\Exceptions\MenuException;
+use App\Modules\Procurement\Exceptions\ProcurementException;
 use App\Modules\Sales\Exceptions\SalesException;
+use App\Modules\Tables\Exceptions\ReservationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -54,6 +60,60 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             return $jsonError($request, $error, $exception->status);
+        });
+
+        $exceptions->render(function (ReservationException $exception, Request $request) use ($jsonError) {
+            $error = ['code' => $exception->errorCode, 'message' => $exception->getMessage()];
+            if ($exception->context !== []) {
+                $error['details'] = $exception->context;
+            }
+
+            return $jsonError($request, $error, $exception->status);
+        });
+
+        $exceptions->render(function (KitchenException $exception, Request $request) use ($jsonError) {
+            $error = ['code' => $exception->errorCode, 'message' => $exception->getMessage()];
+            if ($exception->context !== []) {
+                $error['details'] = $exception->context;
+            }
+
+            return $jsonError($request, $error, $exception->status);
+        });
+
+        $exceptions->render(function (MenuException $exception, Request $request) use ($jsonError) {
+            $error = ['code' => $exception->errorCode, 'message' => $exception->getMessage()];
+            if ($exception->context !== []) {
+                $error['details'] = $exception->context;
+            }
+
+            return $jsonError($request, $error, $exception->status);
+        });
+
+        $exceptions->render(function (InventoryException $exception, Request $request) use ($jsonError) {
+            $error = ['code' => $exception->errorCode, 'message' => $exception->getMessage()];
+            if ($exception->context !== []) {
+                $error['details'] = $exception->context;
+            }
+
+            return $jsonError($request, $error, $exception->status);
+        });
+
+        $exceptions->render(function (ProcurementException $exception, Request $request) use ($jsonError) {
+            $error = ['code' => $exception->errorCode, 'message' => $exception->getMessage()];
+            if ($exception->context !== []) {
+                $error['details'] = $exception->context;
+            }
+
+            return $jsonError($request, $error, $exception->status);
+        });
+
+        $exceptions->render(function (AccountingException $exception, Request $request) use ($jsonError) {
+            $error = ['code' => $exception->errorCode, 'message' => $exception->getMessage()];
+            if ($exception->context !== null) {
+                $error['details'] = $exception->context;
+            }
+
+            return $jsonError($request, $error, $exception->httpStatus);
         });
 
         $exceptions->render(function (IdentityException $exception, Request $request) use ($jsonError) {

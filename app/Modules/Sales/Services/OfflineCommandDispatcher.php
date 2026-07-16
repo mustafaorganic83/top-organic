@@ -6,6 +6,8 @@ namespace App\Modules\Sales\Services;
 
 use App\Models\BranchPaymentMethod;
 use App\Models\Order;
+use App\Modules\Kitchen\Data\KitchenContext;
+use App\Modules\Kitchen\Services\ChefAssignmentService;
 use App\Modules\Sales\Data\SalesContext;
 use App\Modules\Sales\Data\SyncOperation;
 use App\Modules\Sales\Exceptions\SalesException;
@@ -29,12 +31,16 @@ final class OfflineCommandDispatcher
         'payment.capture' => 'settlement',
         'pos.cash.movement' => 'pos',
         'pos.table.open' => 'pos', 'pos.table.close' => 'pos',
+        'kitchen.ticket.start' => 'kitchen', 'kitchen.ticket.ready' => 'kitchen',
+        'kitchen.ticket.serve' => 'kitchen', 'kitchen.ticket.assign' => 'kitchen',
+        'kitchen.ticket.priority' => 'kitchen',
     ];
 
     public function __construct(
         private readonly OrderService $orders,
         private readonly SettlementService $settlement,
         private readonly PosService $pos,
+        private readonly ChefAssignmentService $kitchen,
     ) {}
 
     public function isSafe(string $command): bool
@@ -83,9 +89,25 @@ final class OfflineCommandDispatcher
             'pos.table.open' => $this->pos->openTableSession($context, (string) ($p['table_id'] ?? ''),
                 (int) ($p['guest_count'] ?? 0)),
             'pos.table.close' => $this->pos->closeTableSession($context, $id, $version),
+            'kitchen.ticket.start' => $this->kitchen->transition($this->kitchenContext($context),
+                $operation->entityId, $version, 'start', $op, $p['reason'] ?? null),
+            'kitchen.ticket.ready' => $this->kitchen->transition($this->kitchenContext($context),
+                $operation->entityId, $version, 'ready', $op, $p['reason'] ?? null),
+            'kitchen.ticket.serve' => $this->kitchen->transition($this->kitchenContext($context),
+                $operation->entityId, $version, 'serve', $op, $p['reason'] ?? null),
+            'kitchen.ticket.assign' => $this->kitchen->assign($this->kitchenContext($context),
+                $operation->entityId, $version, isset($p['chef_id']) ? (int) $p['chef_id'] : null, $op),
+            'kitchen.ticket.priority' => $this->kitchen->setPriority($this->kitchenContext($context),
+                $operation->entityId, $version, (bool) ($p['is_priority'] ?? false),
+                isset($p['priority']) ? (int) $p['priority'] : null, $op),
             default => throw new SalesException(SalesException::SCOPE_VIOLATION, 422,
                 'The command is not permitted through offline synchronization.', ['command' => $operation->command]),
         };
+    }
+
+    private function kitchenContext(SalesContext $context): KitchenContext
+    {
+        return new KitchenContext($context->tenantId, $context->branchId, $context->userId, $context->deviceId);
     }
 
     /** @param array<string, mixed> $payload */

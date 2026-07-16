@@ -18,4 +18,9 @@ class Floor extends BranchScopedModel
     {
         return $this->hasMany(DiningTable::class);
     }
+
+    public function rooms(): HasMany
+    {
+        return $this->hasMany(Room::class);
+    }
 }

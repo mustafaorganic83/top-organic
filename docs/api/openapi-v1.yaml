@@ -26,6 +26,36 @@ tags:
   - name: KDS
   - name: Printing
   - name: Sync
+  - name: Tables
+  - name: Reservations
+  - name: Waitlist
+  - name: Reception
+  - name: Kitchen
+  - name: Menu
+  - name: Recipes
+  - name: Inventory
+  - name: Accounting
+  - name: Suppliers
+  - name: AccountsPayable
+  - name: AccountsReceivable
+  - name: Bank
+  - name: Budget
+  - name: FinancialReports
+  - name: Procurement
+  - name: ProcurementRFQ
+  - name: ProcurementPO
+  - name: ProcurementReceiving
+  - name: ProcurementContracts
+  - name: HRDepartments
+  - name: HREmployees
+  - name: HRAttendance
+  - name: HRGeofences
+  - name: HRLeave
+  - name: HRLoans
+  - name: HRPayroll
+  - name: HRPerformance
+  - name: HRDocuments
+  - name: HRTasks
 paths:
   /auth/login:
     post:
@@ -921,7 +951,7 @@ paths:
               required: [expected_version, client_operation_id]
               properties:
                 expected_version: {$ref: '#/components/schemas/LockVersion'}
-                customer_id: {allOf: [{$ref: '#/components/schemas/Ulid'}], nullable: true}
+                customer_id: {type: string, nullable: true, pattern: '^[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$'}
                 client_operation_id: {$ref: '#/components/schemas/ClientOperationId'}
       responses:
         '200': {$ref: '#/components/responses/Order'}
@@ -1243,7 +1273,7 @@ paths:
               required: [expected_version, client_operation_id]
               properties:
                 expected_version: {$ref: '#/components/schemas/LockVersion'}
-                customer_id: {allOf: [{$ref: '#/components/schemas/Ulid'}], nullable: true}
+                customer_id: {type: string, nullable: true, pattern: '^[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$'}
                 client_operation_id: {$ref: '#/components/schemas/ClientOperationId'}
       responses:
         '200': {$ref: '#/components/responses/Order'}
@@ -1425,7 +1455,7 @@ paths:
                 currency: {type: string, minLength: 3, maxLength: 3}
                 initial_amount: {$ref: '#/components/schemas/MoneyAmount'}
                 client_operation_id: {$ref: '#/components/schemas/ClientOperationId'}
-                customer_id: {allOf: [{$ref: '#/components/schemas/Ulid'}], nullable: true}
+                customer_id: {type: string, nullable: true, pattern: '^[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$'}
                 expires_at: {type: string, format: date-time, nullable: true}
       responses:
         '201': {$ref: '#/components/responses/GiftCard'}
@@ -1795,7 +1825,7 @@ paths:
                 payload_type: {type: string, enum: [kitchen_ticket, receipt, invoice, barcode_label, qr_verification]}
                 document_id: {$ref: '#/components/schemas/Ulid'}
                 idempotency_key: {type: string, maxLength: 128}
-                printer_id: {allOf: [{$ref: '#/components/schemas/Ulid'}], nullable: true}
+                printer_id: {type: string, nullable: true, pattern: '^[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$'}
                 client_operation_id: {$ref: '#/components/schemas/ClientOperationId'}
       responses:
         '201': {$ref: '#/components/responses/PrintJob'}
@@ -2014,6 +2044,2710 @@ paths:
         '404': {$ref: '#/components/responses/Error'}
         '409': {$ref: '#/components/responses/Error'}
 
+  /tables/floors:
+    get:
+      tags: [Tables]
+      operationId: listReservationFloors
+      summary: List floors with their rooms and tables (floor map)
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+    post:
+      tags: [Tables]
+      operationId: createFloor
+      summary: Create a floor (layout designer)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, name]
+              properties:
+                code: {type: string, maxLength: 64}
+                name: {type: string, maxLength: 255}
+                layout: {type: object, nullable: true}
+                status: {type: string, enum: [active, inactive]}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+  /tables/floors/{floor}:
+    patch:
+      tags: [Tables]
+      operationId: updateFloor
+      summary: Update a floor or its layout (optimistic lock)
+      parameters:
+        - {name: floor, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [expected_version]
+              properties:
+                expected_version: {type: integer, minimum: 0}
+                name: {type: string}
+                layout: {type: object, nullable: true}
+                status: {type: string, enum: [active, inactive]}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+  /tables/rooms:
+    post:
+      tags: [Tables]
+      operationId: createRoom
+      summary: Create a room (VIP/private) on a floor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, name]
+              properties:
+                code: {type: string, maxLength: 64}
+                name: {type: string}
+                floor_id: {type: string, nullable: true, pattern: '^[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$'}
+                kind: {type: string, enum: [standard, vip, private]}
+                capacity: {type: integer, minimum: 0}
+                minimum_spend_amount: {type: integer, nullable: true, minimum: 0}
+                currency: {type: string, minLength: 3, maxLength: 3, nullable: true}
+                requires_approval: {type: boolean}
+                description: {type: string, nullable: true}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+        '403': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+  /tables/tables:
+    get:
+      tags: [Tables]
+      operationId: listReservationTables
+      summary: List dining tables with live occupancy
+      parameters:
+        - {name: occupancy_status, in: query, required: false, schema: {type: string, enum: [available, reserved, occupied, held, blocked, cleaning]}}
+        - {name: area, in: query, required: false, schema: {type: string, enum: [indoor, outdoor]}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '403': {$ref: '#/components/responses/Error'}
+    post:
+      tags: [Tables]
+      operationId: createTable
+      summary: Create a dining table
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [floor_id, code]
+              properties:
+                floor_id: {$ref: '#/components/schemas/Ulid'}
+                room_id: {type: string, nullable: true, pattern: '^[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$'}
+                code: {type: string, maxLength: 64}
+                name: {type: string, nullable: true}
+                area: {type: string, enum: [indoor, outdoor]}
+                shape: {type: string, enum: [square, round, rectangle]}
+                capacity: {type: integer, minimum: 1}
+                is_reservable: {type: boolean}
+                sort_order: {type: integer, minimum: 0}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+        '403': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+  /tables/tables/{table}:
+    patch:
+      tags: [Tables]
+      operationId: updateTable
+      summary: Update a dining table (optimistic lock)
+      parameters:
+        - {name: table, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [expected_version]
+              properties:
+                expected_version: {type: integer, minimum: 0}
+                name: {type: string, nullable: true}
+                area: {type: string, enum: [indoor, outdoor]}
+                capacity: {type: integer, minimum: 1}
+                is_reservable: {type: boolean}
+                status: {type: string, enum: [active, inactive]}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+  /tables/tables/{table}/occupancy:
+    post:
+      tags: [Tables]
+      operationId: changeTableOccupancy
+      summary: Change a table's live occupancy status
+      parameters:
+        - {name: table, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [occupancy_status, expected_version]
+              properties:
+                occupancy_status: {type: string, enum: [available, reserved, occupied, held, blocked, cleaning]}
+                expected_version: {type: integer, minimum: 0}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+  /tables/reception/overview:
+    get:
+      tags: [Reception]
+      operationId: receptionOverview
+      summary: Tablet reception screen — floor map, upcoming reservations, and waitlist in one call
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '403': {$ref: '#/components/responses/Error'}
+  /reservations:
+    get:
+      tags: [Reservations]
+      operationId: listReservations
+      summary: List reservations (filter by state, channel, date, customer)
+      parameters:
+        - {name: state, in: query, required: false, schema: {type: string, enum: [pending, confirmed, seated, completed, cancelled, no_show]}}
+        - {name: channel, in: query, required: false, schema: {type: string, enum: [walk_in, phone, call_center, online, whatsapp, ai, pos]}}
+        - {name: date, in: query, required: false, schema: {type: string, format: date}}
+        - {name: customer_id, in: query, required: false, schema: {$ref: '#/components/schemas/Ulid'}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericList'}
+        '403': {$ref: '#/components/responses/Error'}
+    post:
+      tags: [Reservations]
+      operationId: createReservation
+      summary: Create a reservation from any channel (walk-in, phone, call centre, online, WhatsApp, AI)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [party_size]
+              properties:
+                reservation_source_id: {type: string, nullable: true, pattern: '^[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$'}
+                customer_id: {type: string, nullable: true, pattern: '^[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$'}
+                room_id: {type: string, nullable: true, pattern: '^[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$'}
+                channel: {type: string, enum: [walk_in, phone, call_center, online, whatsapp, ai, pos]}
+                guest_name: {type: string}
+                guest_phone: {type: string, nullable: true}
+                guest_email: {type: string, format: email, nullable: true}
+                party_size: {type: integer, minimum: 1}
+                area: {type: string, enum: [indoor, outdoor, any], nullable: true}
+                reserved_for: {type: string, format: date-time, nullable: true}
+                duration_minutes: {type: integer, minimum: 15, maximum: 1440}
+                is_walk_in: {type: boolean}
+                special_requests: {type: string, nullable: true}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+  /reservations/{reservation}:
+    get:
+      tags: [Reservations]
+      operationId: showReservation
+      summary: Show a reservation with its audit trail
+      parameters:
+        - {name: reservation, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '404': {$ref: '#/components/responses/Error'}
+  /reservations/{reservation}/confirm:
+    post:
+      tags: [Reservations]
+      operationId: confirmReservation
+      summary: Confirm a pending reservation
+      parameters:
+        - {name: reservation, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      requestBody: {$ref: '#/components/requestBodies/ReservationConfirm'}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '409': {$ref: '#/components/responses/Error'}
+  /reservations/{reservation}/assign-table:
+    post:
+      tags: [Reservations]
+      operationId: assignReservationTable
+      summary: Assign a table to a reservation (reserves the table)
+      parameters:
+        - {name: reservation, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [table_id, expected_version]
+              properties:
+                table_id: {$ref: '#/components/schemas/Ulid'}
+                expected_version: {type: integer, minimum: 0}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '409': {$ref: '#/components/responses/Error'}
+  /reservations/{reservation}/seat:
+    post:
+      tags: [Reservations]
+      operationId: seatReservation
+      summary: Seat a reservation (opens a POS table session; requires an authorized device)
+      parameters:
+        - {name: reservation, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      requestBody: {$ref: '#/components/requestBodies/VersionOnly'}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '403': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+  /reservations/{reservation}/complete:
+    post:
+      tags: [Reservations]
+      operationId: completeReservation
+      summary: Complete a seated reservation (frees the table)
+      parameters:
+        - {name: reservation, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      requestBody: {$ref: '#/components/requestBodies/VersionOnly'}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '409': {$ref: '#/components/responses/Error'}
+  /reservations/{reservation}/cancel:
+    post:
+      tags: [Reservations]
+      operationId: cancelReservation
+      summary: Cancel a pending or confirmed reservation
+      parameters:
+        - {name: reservation, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [expected_version]
+              properties:
+                expected_version: {type: integer, minimum: 0}
+                reason: {type: string, nullable: true, maxLength: 500}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '409': {$ref: '#/components/responses/Error'}
+  /reservations/{reservation}/no-show:
+    post:
+      tags: [Reservations]
+      operationId: noShowReservation
+      summary: Mark a reservation as a no-show
+      parameters:
+        - {name: reservation, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      requestBody: {$ref: '#/components/requestBodies/VersionOnly'}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '409': {$ref: '#/components/responses/Error'}
+  /reservations/customers/{customer}/history:
+    get:
+      tags: [Reservations]
+      operationId: reservationCustomerHistory
+      summary: Reservation history for a customer (tenant-wide)
+      parameters:
+        - {name: customer, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericList'}
+        '404': {$ref: '#/components/responses/Error'}
+  /reservations/waitlist:
+    get:
+      tags: [Waitlist]
+      operationId: listWaitlist
+      summary: List active waiting-list entries (FIFO)
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '403': {$ref: '#/components/responses/Error'}
+    post:
+      tags: [Waitlist]
+      operationId: joinWaitlist
+      summary: Add a walk-in guest to the waiting list
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [party_size]
+              properties:
+                customer_id: {type: string, nullable: true, pattern: '^[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$'}
+                guest_name: {type: string}
+                guest_phone: {type: string, nullable: true}
+                party_size: {type: integer, minimum: 1}
+                area: {type: string, enum: [indoor, outdoor, any], nullable: true}
+                quoted_wait_minutes: {type: integer, nullable: true, minimum: 0}
+                notes: {type: string, nullable: true}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+        '403': {$ref: '#/components/responses/Error'}
+  /reservations/waitlist/{entry}/notify:
+    post:
+      tags: [Waitlist]
+      operationId: notifyWaitlistEntry
+      summary: Mark a waiting-list entry as notified
+      parameters:
+        - {name: entry, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      requestBody: {$ref: '#/components/requestBodies/VersionOnly'}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '409': {$ref: '#/components/responses/Error'}
+  /reservations/waitlist/{entry}/seat:
+    post:
+      tags: [Waitlist]
+      operationId: seatWaitlistEntry
+      summary: Seat a waiting-list entry
+      parameters:
+        - {name: entry, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      requestBody: {$ref: '#/components/requestBodies/VersionOnly'}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '409': {$ref: '#/components/responses/Error'}
+  /reservations/waitlist/{entry}/cancel:
+    post:
+      tags: [Waitlist]
+      operationId: cancelWaitlistEntry
+      summary: Cancel a waiting-list entry
+      parameters:
+        - {name: entry, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [expected_version]
+              properties:
+                expected_version: {type: integer, minimum: 0}
+                reason: {type: string, nullable: true, maxLength: 500}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '409': {$ref: '#/components/responses/Error'}
+
+  # ─── Kitchen Management ───────────────────────────────────────────────────────
+  /kitchen/stations:
+    get:
+      tags: [Kitchen]
+      operationId: listKitchenStations
+      summary: List kitchen stations and their screen wiring
+      parameters:
+        - {name: all, in: query, schema: {type: boolean, default: false}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+    post:
+      tags: [Kitchen]
+      operationId: createKitchenStation
+      summary: Create a kitchen station
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, name]
+              properties:
+                code: {type: string, maxLength: 64}
+                name: {type: string, maxLength: 255}
+                station_type: {type: string, enum: [kitchen, bar, grill, cold, dessert, expo], default: kitchen}
+                device_id: {type: string, nullable: true, pattern: '^[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$'}
+                sla_seconds: {type: integer, nullable: true, minimum: 0, maximum: 86400}
+                default_prep_seconds: {type: integer, nullable: true, minimum: 0, maximum: 86400}
+                sort_order: {type: integer, minimum: 0, maximum: 65535}
+                screen_config: {type: object, nullable: true}
+                status: {type: string, enum: [active, inactive], default: active}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /kitchen/stations/{station}:
+    get:
+      tags: [Kitchen]
+      operationId: showKitchenStation
+      summary: Show one kitchen station
+      parameters:
+        - {name: station, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '404': {$ref: '#/components/responses/Error'}
+    patch:
+      tags: [Kitchen]
+      operationId: updateKitchenStation
+      summary: Update a kitchen station (optimistic locking)
+      parameters:
+        - {name: station, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [expected_version]
+              properties:
+                expected_version: {type: integer, minimum: 0}
+                code: {type: string, maxLength: 64}
+                name: {type: string, maxLength: 255}
+                station_type: {type: string, enum: [kitchen, bar, grill, cold, dessert, expo]}
+                sla_seconds: {type: integer, nullable: true, minimum: 0, maximum: 86400}
+                default_prep_seconds: {type: integer, nullable: true, minimum: 0, maximum: 86400}
+                sort_order: {type: integer, minimum: 0, maximum: 65535}
+                screen_config: {type: object, nullable: true}
+                status: {type: string, enum: [active, inactive]}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /kitchen/board:
+    get:
+      tags: [Kitchen]
+      operationId: kitchenBoard
+      summary: Full kitchen board grouped by phase (preparation, cooking, ready, served) with live timers
+      parameters:
+        - {name: station_id, in: query, schema: {$ref: '#/components/schemas/Ulid'}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+  /kitchen/queues/{phase}:
+    get:
+      tags: [Kitchen]
+      operationId: kitchenQueue
+      summary: A single kitchen phase queue with live timers
+      parameters:
+        - {name: phase, in: path, required: true, schema: {type: string, enum: [preparation, cooking, ready, served]}}
+        - {name: station_id, in: query, schema: {$ref: '#/components/schemas/Ulid'}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '403': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /kitchen/tickets/{ticket}:
+    get:
+      tags: [Kitchen]
+      operationId: showKitchenTicket
+      summary: Show one kitchen ticket with its timer and event trail
+      parameters:
+        - {name: ticket, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '404': {$ref: '#/components/responses/Error'}
+  /kitchen/tickets/{ticket}/start:
+    post:
+      tags: [Kitchen]
+      operationId: startKitchenTicket
+      summary: Move a ticket to cooking (preparation → cooking)
+      parameters:
+        - {name: ticket, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      requestBody: {$ref: '#/components/requestBodies/KitchenAction'}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /kitchen/tickets/{ticket}/ready:
+    post:
+      tags: [Kitchen]
+      operationId: readyKitchenTicket
+      summary: Move a ticket to ready and capture prep time (cooking → ready)
+      parameters:
+        - {name: ticket, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      requestBody: {$ref: '#/components/requestBodies/KitchenAction'}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /kitchen/tickets/{ticket}/serve:
+    post:
+      tags: [Kitchen]
+      operationId: serveKitchenTicket
+      summary: Mark a ticket served (ready → served)
+      parameters:
+        - {name: ticket, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      requestBody: {$ref: '#/components/requestBodies/KitchenAction'}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /kitchen/tickets/{ticket}/assign:
+    post:
+      tags: [Kitchen]
+      operationId: assignKitchenChef
+      summary: Assign or clear the chef on a ticket
+      parameters:
+        - {name: ticket, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [expected_version, chef_id, client_operation_id]
+              properties:
+                expected_version: {type: integer, minimum: 0}
+                chef_id: {type: integer, nullable: true, minimum: 1}
+                client_operation_id: {type: string, maxLength: 128, pattern: '^[A-Za-z0-9._:-]+$'}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /kitchen/tickets/{ticket}/priority:
+    post:
+      tags: [Kitchen]
+      operationId: setKitchenPriority
+      summary: Flag or clear a ticket as a priority order
+      parameters:
+        - {name: ticket, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [expected_version, is_priority, client_operation_id]
+              properties:
+                expected_version: {type: integer, minimum: 0}
+                is_priority: {type: boolean}
+                priority: {type: integer, nullable: true, minimum: 1, maximum: 1000}
+                client_operation_id: {type: string, maxLength: 128, pattern: '^[A-Za-z0-9._:-]+$'}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /kitchen/analytics/kpis:
+    get:
+      tags: [Kitchen]
+      operationId: kitchenKpis
+      summary: Headline kitchen KPIs (throughput, average prep time, on-time rate, live load)
+      parameters:
+        - {name: from, in: query, schema: {type: string, format: date-time}}
+        - {name: to, in: query, schema: {type: string, format: date-time}}
+        - {name: station_id, in: query, schema: {$ref: '#/components/schemas/Ulid'}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '403': {$ref: '#/components/responses/Error'}
+  /kitchen/analytics/chefs:
+    get:
+      tags: [Kitchen]
+      operationId: kitchenChefPerformance
+      summary: Per-chef kitchen performance over a window
+      parameters:
+        - {name: from, in: query, schema: {type: string, format: date-time}}
+        - {name: to, in: query, schema: {type: string, format: date-time}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '403': {$ref: '#/components/responses/Error'}
+
+  # ---- Menu & Recipe Management ------------------------------------------
+  /menu/categories:
+    get:
+      tags: [Menu]
+      operationId: listMenuCategories
+      summary: List menu categories
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '403': {$ref: '#/components/responses/Error'}
+    post:
+      tags: [Menu]
+      operationId: createMenuCategory
+      summary: Create a menu category
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, name]
+              properties:
+                code: {type: string, maxLength: 64}
+                name: {type: string, maxLength: 255}
+                parent_id: {type: string, nullable: true, pattern: '^[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$'}
+                description: {type: string, nullable: true, maxLength: 2000}
+                image_url: {type: string, nullable: true, maxLength: 1024}
+                sort_order: {type: integer, minimum: 0}
+                status: {type: string, enum: [active, inactive], default: active}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+        '409': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /menu/categories/{category}:
+    patch:
+      tags: [Menu]
+      operationId: updateMenuCategory
+      summary: Update a menu category (optimistic locking)
+      parameters:
+        - {name: category, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [expected_version]
+              properties:
+                expected_version: {type: integer, minimum: 0}
+                name: {type: string, maxLength: 255}
+                description: {type: string, nullable: true}
+                image_url: {type: string, nullable: true}
+                sort_order: {type: integer, minimum: 0}
+                status: {type: string, enum: [active, inactive]}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '409': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /menu/products:
+    get:
+      tags: [Menu]
+      operationId: listMenuProducts
+      summary: List menu products with variants and media
+      parameters:
+        - {name: category_id, in: query, schema: {$ref: '#/components/schemas/Ulid'}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '403': {$ref: '#/components/responses/Error'}
+    post:
+      tags: [Menu]
+      operationId: createMenuProduct
+      summary: Create a menu product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [sku, name]
+              properties:
+                sku: {type: string, maxLength: 96}
+                name: {type: string, maxLength: 255}
+                category_id: {type: string, nullable: true, pattern: '^[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$'}
+                tax_class_id: {type: string, nullable: true, pattern: '^[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$'}
+                description: {type: string, nullable: true}
+                is_sellable: {type: boolean, default: true}
+                is_meal: {type: boolean, default: false}
+                calories: {type: integer, nullable: true, minimum: 0}
+                nutrition_summary: {type: object, nullable: true}
+                sort_order: {type: integer, minimum: 0}
+                status: {type: string, enum: [active, inactive], default: active}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+        '409': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /menu/products/{product}:
+    get:
+      tags: [Menu]
+      operationId: showMenuProduct
+      summary: Show a product with variants, media, modifiers and allergens
+      parameters:
+        - {name: product, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '404': {$ref: '#/components/responses/Error'}
+    patch:
+      tags: [Menu]
+      operationId: updateMenuProduct
+      summary: Update a product (optimistic locking)
+      parameters:
+        - {name: product, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      requestBody: {$ref: '#/components/requestBodies/VersionOnly'}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '409': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /menu/products/{product}/variants:
+    post:
+      tags: [Menu]
+      operationId: createMenuVariant
+      summary: Add a meal-size variant to a product
+      parameters:
+        - {name: product, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code]
+              properties:
+                code: {type: string, maxLength: 64}
+                name: {type: string, nullable: true}
+                meal_size: {type: string, nullable: true, maxLength: 32}
+                barcode: {type: string, nullable: true, maxLength: 128}
+                calories: {type: integer, nullable: true, minimum: 0}
+                sort_order: {type: integer, minimum: 0}
+                status: {type: string, enum: [active, inactive], default: active}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+        '409': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /menu/products/{product}/variants/{variant}:
+    patch:
+      tags: [Menu]
+      operationId: updateMenuVariant
+      summary: Update a variant (optimistic locking)
+      parameters:
+        - {name: product, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+        - {name: variant, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      requestBody: {$ref: '#/components/requestBodies/VersionOnly'}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '409': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /menu/products/{product}/modifiers:
+    post:
+      tags: [Menu]
+      operationId: attachMenuModifierGroup
+      summary: Attach a modifier group (extras) to a product
+      parameters:
+        - {name: product, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [modifier_group_id]
+              properties:
+                modifier_group_id: {$ref: '#/components/schemas/Ulid'}
+                product_variant_id: {type: string, nullable: true, pattern: '^[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$'}
+                sort_order: {type: integer, minimum: 0}
+                min_selections: {type: integer, nullable: true, minimum: 0}
+                max_selections: {type: integer, nullable: true, minimum: 0}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+        '409': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /menu/products/{product}/nutrition:
+    get:
+      tags: [Menu]
+      operationId: showMenuProductNutrition
+      summary: Nutrition and allergen roll-up for a product
+      parameters:
+        - {name: product, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '404': {$ref: '#/components/responses/Error'}
+  /menu/modifier-groups:
+    get:
+      tags: [Menu]
+      operationId: listMenuModifierGroups
+      summary: List modifier groups with options
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '403': {$ref: '#/components/responses/Error'}
+    post:
+      tags: [Menu]
+      operationId: createMenuModifierGroup
+      summary: Create a modifier group
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, name]
+              properties:
+                code: {type: string, maxLength: 64}
+                name: {type: string, maxLength: 255}
+                min_selections: {type: integer, minimum: 0}
+                max_selections: {type: integer, nullable: true, minimum: 0}
+                is_required: {type: boolean, default: false}
+                status: {type: string, enum: [active, inactive], default: active}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /menu/modifier-groups/{group}/options:
+    post:
+      tags: [Menu]
+      operationId: createMenuModifierOption
+      summary: Add an option (extra) to a modifier group
+      parameters:
+        - {name: group, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, name, currency]
+              properties:
+                code: {type: string, maxLength: 64}
+                name: {type: string, maxLength: 255}
+                surcharge_amount: {type: integer, minimum: 0, description: Minor currency units}
+                currency: {type: string, minLength: 3, maxLength: 3}
+                sort_order: {type: integer, minimum: 0}
+                status: {type: string, enum: [active, inactive], default: active}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /menu/media:
+    get:
+      tags: [Menu]
+      operationId: listMenuMedia
+      summary: List images/videos for a menu entity
+      parameters:
+        - {name: entity_type, in: query, required: true, schema: {type: string, enum: [product, product_variant, category]}}
+        - {name: entity_id, in: query, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+    post:
+      tags: [Menu]
+      operationId: createMenuMedia
+      summary: Attach an image or video to a menu entity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [entity_type, entity_id, url]
+              properties:
+                entity_type: {type: string, enum: [product, product_variant, category]}
+                entity_id: {$ref: '#/components/schemas/Ulid'}
+                kind: {type: string, enum: [image, video], default: image}
+                url: {type: string, maxLength: 1024}
+                thumbnail_url: {type: string, nullable: true, maxLength: 1024}
+                alt_text: {type: string, nullable: true}
+                is_primary: {type: boolean, default: false}
+                sort_order: {type: integer, minimum: 0}
+                metadata: {type: object, nullable: true}
+                status: {type: string, enum: [active, inactive], default: active}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /menu/media/{media}:
+    patch:
+      tags: [Menu]
+      operationId: updateMenuMedia
+      summary: Update a media asset (optimistic locking)
+      parameters:
+        - {name: media, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      requestBody: {$ref: '#/components/requestBodies/VersionOnly'}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '409': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+    delete:
+      tags: [Menu]
+      operationId: deleteMenuMedia
+      summary: Remove a media asset
+      parameters:
+        - {name: media, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '404': {$ref: '#/components/responses/Error'}
+  /menu/ingredients:
+    get:
+      tags: [Menu]
+      operationId: listIngredients
+      summary: List ingredients (stock items)
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '403': {$ref: '#/components/responses/Error'}
+    post:
+      tags: [Menu]
+      operationId: createIngredient
+      summary: Create an ingredient
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [sku, name, stock_unit, currency]
+              properties:
+                sku: {type: string, maxLength: 96}
+                name: {type: string, maxLength: 255}
+                kind: {type: string, enum: [ingredient, packaging], default: ingredient}
+                stock_unit: {type: string, maxLength: 24}
+                unit_cost_amount: {type: integer, minimum: 0, description: Minor units per stock unit}
+                currency: {type: string, minLength: 3, maxLength: 3}
+                default_waste_bps: {type: integer, minimum: 0, description: Basis points}
+                calories_per_unit: {type: integer, nullable: true, minimum: 0}
+                nutrition: {type: object, nullable: true}
+                status: {type: string, enum: [active, inactive], default: active}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+        '409': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /menu/ingredients/{ingredient}:
+    patch:
+      tags: [Menu]
+      operationId: updateIngredient
+      summary: Update an ingredient (optimistic locking)
+      parameters:
+        - {name: ingredient, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      requestBody: {$ref: '#/components/requestBodies/VersionOnly'}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '409': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /menu/semi-finished:
+    get:
+      tags: [Menu]
+      operationId: listSemiFinished
+      summary: List semi-finished products
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '403': {$ref: '#/components/responses/Error'}
+    post:
+      tags: [Menu]
+      operationId: createSemiFinished
+      summary: Create a semi-finished product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [sku, name, yield_unit]
+              properties:
+                sku: {type: string, maxLength: 96}
+                name: {type: string, maxLength: 255}
+                yield_unit: {type: string, maxLength: 24}
+                yield_quantity: {type: number, minimum: 0}
+                calories_per_unit: {type: integer, nullable: true, minimum: 0}
+                nutrition: {type: object, nullable: true}
+                status: {type: string, enum: [active, inactive], default: active}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+        '409': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /menu/allergens:
+    get:
+      tags: [Menu]
+      operationId: listAllergens
+      summary: List the allergen catalog
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '403': {$ref: '#/components/responses/Error'}
+    post:
+      tags: [Menu]
+      operationId: createAllergen
+      summary: Create an allergen
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, name]
+              properties:
+                code: {type: string, maxLength: 64}
+                name: {type: string, maxLength: 255}
+                icon: {type: string, nullable: true, maxLength: 128}
+                status: {type: string, enum: [active, inactive], default: active}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+        '409': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /menu/allergens/tag:
+    post:
+      tags: [Menu]
+      operationId: tagAllergen
+      summary: Tag an entity with an allergen
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [allergen_id, entity_type, entity_id]
+              properties:
+                allergen_id: {$ref: '#/components/schemas/Ulid'}
+                entity_type: {type: string, enum: [product, stock_item, semi_finished_product]}
+                entity_id: {$ref: '#/components/schemas/Ulid'}
+                is_traces: {type: boolean, default: false}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+        '404': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /recipes:
+    get:
+      tags: [Recipes]
+      operationId: listRecipes
+      summary: List recipes with their active version
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '403': {$ref: '#/components/responses/Error'}
+    post:
+      tags: [Recipes]
+      operationId: createRecipe
+      summary: Create a recipe header for a variant or semi-finished product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [owner_type, owner_id, name]
+              properties:
+                owner_type: {type: string, enum: [product_variant, semi_finished_product]}
+                owner_id: {$ref: '#/components/schemas/Ulid'}
+                name: {type: string, maxLength: 255}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+        '409': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /recipes/{recipe}:
+    get:
+      tags: [Recipes]
+      operationId: showRecipe
+      summary: Show a recipe with all versions and components
+      parameters:
+        - {name: recipe, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '404': {$ref: '#/components/responses/Error'}
+  /recipes/{recipe}/versions:
+    post:
+      tags: [Recipes]
+      operationId: draftRecipeVersion
+      summary: Draft a new recipe version with its costed BOM
+      parameters:
+        - {name: recipe, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [components]
+              properties:
+                yield_quantity: {type: number, minimum: 0, default: 1}
+                yield_unit: {type: string, maxLength: 24, default: portion}
+                waste_bps: {type: integer, minimum: 0, description: Overall production waste (basis points)}
+                calories: {type: integer, nullable: true, minimum: 0}
+                nutrition: {type: object, nullable: true}
+                instructions: {type: string, nullable: true}
+                components:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    required: [component_type, component_id, quantity, unit]
+                    properties:
+                      component_type: {type: string, enum: [stock_item, semi_finished_product]}
+                      component_id: {$ref: '#/components/schemas/Ulid'}
+                      quantity: {type: number, exclusiveMinimum: 0}
+                      unit: {type: string, maxLength: 24}
+                      waste_bps: {type: integer, minimum: 0}
+                      sort_order: {type: integer, minimum: 0}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+        '404': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /recipes/{recipe}/versions/{version}/publish:
+    post:
+      tags: [Recipes]
+      operationId: publishRecipeVersion
+      summary: Publish a draft version (freezes cost and nutrition)
+      parameters:
+        - {name: recipe, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+        - {name: version, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '404': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /recipes/{recipe}/versions/{version}/activate:
+    post:
+      tags: [Recipes]
+      operationId: activateRecipeVersion
+      summary: Activate a published version (pins the live recipe)
+      parameters:
+        - {name: recipe, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+        - {name: version, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '404': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /recipes/{recipe}/cost:
+    get:
+      tags: [Recipes]
+      operationId: showRecipeCost
+      summary: Recipe cost, food cost %, yield and waste for the live version
+      parameters:
+        - {name: recipe, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '404': {$ref: '#/components/responses/Error'}
+  /inventory/levels:
+    get:
+      tags: [Inventory]
+      operationId: listInventoryLevels
+      summary: List on-hand stock levels for the branch
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '403': {$ref: '#/components/responses/Error'}
+  /inventory/movements:
+    get:
+      tags: [Inventory]
+      operationId: listInventoryMovements
+      summary: List recent inventory movements (ledger)
+      parameters:
+        - {name: stockable_type, in: query, schema: {type: string, enum: [stock_item, semi_finished_product]}}
+        - {name: stockable_id, in: query, schema: {$ref: '#/components/schemas/Ulid'}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '403': {$ref: '#/components/responses/Error'}
+  /inventory/adjust:
+    post:
+      tags: [Inventory]
+      operationId: adjustInventory
+      summary: Record a manual stock adjustment or production addition
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [stockable_type, stockable_id, quantity_delta, unit]
+              properties:
+                stockable_type: {type: string, enum: [stock_item, semi_finished_product]}
+                stockable_id: {$ref: '#/components/schemas/Ulid'}
+                reason: {type: string, enum: [production, adjustment, waste], default: adjustment}
+                quantity_delta: {type: number, description: 'Positive to add, negative to deduct'}
+                unit: {type: string, maxLength: 24}
+                unit_cost_amount: {type: integer, minimum: 0}
+                client_operation_id: {type: string, maxLength: 128, pattern: '^[A-Za-z0-9._:-]+$'}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /inventory/consume:
+    post:
+      tags: [Inventory]
+      operationId: consumeInventory
+      summary: Consume ingredients for a sold variant (BOM explosion, idempotent)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [product_variant_id, quantity, client_operation_id]
+              properties:
+                product_variant_id: {$ref: '#/components/schemas/Ulid'}
+                quantity: {type: number, exclusiveMinimum: 0}
+                client_operation_id: {type: string, maxLength: 128, pattern: '^[A-Za-z0-9._:-]+$'}
+                reference_type: {type: string, nullable: true, maxLength: 32}
+                reference_id: {type: string, nullable: true, pattern: '^[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$'}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+
+  # ── Accounting ERP ──────────────────────────────────────────────────────────
+  /accounting/accounts:
+    get:
+      tags: [Accounting]
+      operationId: listAccounts
+      summary: List Chart of Accounts
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: type, in: query, schema: {type: string, enum: [asset,liability,equity,revenue,expense,cogs]}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericList'}
+    post:
+      tags: [Accounting]
+      operationId: createAccount
+      summary: Create a GL account
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, name, type]
+              properties:
+                code: {type: string, maxLength: 20}
+                name: {type: string, maxLength: 200}
+                type: {type: string, enum: [asset,liability,equity,revenue,expense,cogs]}
+                subtype: {type: string, nullable: true}
+                parent_id: {$ref: '#/components/schemas/Ulid'}
+                allow_direct_posting: {type: boolean}
+                currency: {type: string}
+                status: {type: string, enum: [active,inactive]}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /accounting/accounts/{account}:
+    parameters:
+      - {name: account, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+    get:
+      tags: [Accounting]
+      operationId: showAccount
+      summary: Get a GL account
+      security: [{bearerAuth: []}]
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+    patch:
+      tags: [Accounting]
+      operationId: updateAccount
+      summary: Update a GL account
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [expected_version]
+              properties:
+                name: {type: string}
+                status: {type: string, enum: [active,inactive]}
+                expected_version: {type: integer}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+    delete:
+      tags: [Accounting]
+      operationId: deleteAccount
+      summary: Delete a leaf GL account
+      security: [{bearerAuth: []}]
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /accounting/cost-centers:
+    get:
+      tags: [Accounting]
+      operationId: listCostCenters
+      summary: List cost centers
+      security: [{bearerAuth: []}]
+      responses:
+        '200': {$ref: '#/components/responses/GenericList'}
+    post:
+      tags: [Accounting]
+      operationId: createCostCenter
+      summary: Create a cost center
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, name]
+              properties:
+                code: {type: string}
+                name: {type: string}
+                type: {type: string, enum: [branch,department,project]}
+                branch_id: {$ref: '#/components/schemas/Ulid'}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+  /accounting/journals:
+    get:
+      tags: [Accounting]
+      operationId: listJournalEntries
+      summary: List journal entries
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: fiscal_year, in: query, schema: {type: string}}
+        - {name: status, in: query, schema: {type: string, enum: [draft,posted,reversed]}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericList'}
+    post:
+      tags: [Accounting]
+      operationId: createJournalEntry
+      summary: Create a draft journal entry
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reference, entry_date, lines]
+              properties:
+                reference: {type: string, maxLength: 50}
+                entry_date: {type: string, format: date}
+                description: {type: string, nullable: true}
+                branch_id: {$ref: '#/components/schemas/Ulid'}
+                lines:
+                  type: array
+                  minItems: 2
+                  items:
+                    type: object
+                    required: [account_id, debit_amount, credit_amount]
+                    properties:
+                      account_id: {$ref: '#/components/schemas/Ulid'}
+                      debit_amount: {type: integer, minimum: 0}
+                      credit_amount: {type: integer, minimum: 0}
+                      cost_center_id: {$ref: '#/components/schemas/Ulid'}
+                      project_id: {$ref: '#/components/schemas/Ulid'}
+                      description: {type: string, nullable: true}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /accounting/journals/{journal}:
+    parameters:
+      - {name: journal, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+    get:
+      tags: [Accounting]
+      operationId: showJournalEntry
+      summary: Get a journal entry with lines
+      security: [{bearerAuth: []}]
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /accounting/journals/{journal}/post:
+    parameters:
+      - {name: journal, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+    post:
+      tags: [Accounting]
+      operationId: postJournalEntry
+      summary: Post a draft journal entry
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [expected_version]
+              properties:
+                expected_version: {type: integer}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+  /accounting/journals/{journal}/reverse:
+    parameters:
+      - {name: journal, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+    post:
+      tags: [Accounting]
+      operationId: reverseJournalEntry
+      summary: Reverse a posted journal entry
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [expected_version, reference, description]
+              properties:
+                expected_version: {type: integer}
+                reference: {type: string, maxLength: 50}
+                description: {type: string}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+  /accounting/suppliers:
+    get:
+      tags: [Suppliers]
+      operationId: listSuppliers
+      summary: List suppliers
+      security: [{bearerAuth: []}]
+      responses:
+        '200': {$ref: '#/components/responses/GenericList'}
+    post:
+      tags: [Suppliers]
+      operationId: createSupplier
+      summary: Create a supplier
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, name]
+              properties:
+                code: {type: string, maxLength: 20}
+                name: {type: string, maxLength: 200}
+                tax_number: {type: string, nullable: true}
+                phone: {type: string, nullable: true}
+                email: {type: string, format: email, nullable: true}
+                address: {type: string, nullable: true}
+                ap_account_id: {$ref: '#/components/schemas/Ulid'}
+                payment_terms: {type: string}
+                currency: {type: string}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+  /accounting/ap/invoices:
+    get:
+      tags: [AccountsPayable]
+      operationId: listApInvoices
+      summary: List AP invoices
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: supplier_id, in: query, schema: {$ref: '#/components/schemas/Ulid'}}
+        - {name: status, in: query, schema: {type: string}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericList'}
+    post:
+      tags: [AccountsPayable]
+      operationId: createApInvoice
+      summary: Create an AP invoice (supplier bill)
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [supplier_id, reference, invoice_date, due_date, total_amount]
+              properties:
+                supplier_id: {$ref: '#/components/schemas/Ulid'}
+                reference: {type: string, maxLength: 50}
+                invoice_date: {type: string, format: date}
+                due_date: {type: string, format: date}
+                total_amount: {type: integer, minimum: 1}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+  /accounting/ap/invoices/{invoice}/approve:
+    parameters:
+      - {name: invoice, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+    post:
+      tags: [AccountsPayable]
+      operationId: approveApInvoice
+      summary: Approve an AP invoice and auto-post journal entry
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [expected_version]
+              properties:
+                expected_version: {type: integer}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /accounting/ap/invoices/{invoice}/pay:
+    parameters:
+      - {name: invoice, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+    post:
+      tags: [AccountsPayable]
+      operationId: payApInvoice
+      summary: Record a payment against an AP invoice
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reference, payment_date, amount]
+              properties:
+                reference: {type: string, maxLength: 50}
+                payment_date: {type: string, format: date}
+                amount: {type: integer, minimum: 1}
+                method: {type: string, enum: [cash,bank_transfer,cheque]}
+                bank_account_id: {$ref: '#/components/schemas/Ulid'}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+  /accounting/ap/aging:
+    get:
+      tags: [AccountsPayable]
+      operationId: apAgingReport
+      summary: AP aging report
+      security: [{bearerAuth: []}]
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /accounting/ar/invoices:
+    get:
+      tags: [AccountsReceivable]
+      operationId: listArInvoices
+      summary: List AR invoices
+      security: [{bearerAuth: []}]
+      responses:
+        '200': {$ref: '#/components/responses/GenericList'}
+    post:
+      tags: [AccountsReceivable]
+      operationId: createArInvoice
+      summary: Create an AR invoice
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reference, invoice_date, due_date, total_amount]
+              properties:
+                reference: {type: string, maxLength: 50}
+                invoice_date: {type: string, format: date}
+                due_date: {type: string, format: date}
+                total_amount: {type: integer, minimum: 1}
+                customer_id: {$ref: '#/components/schemas/Ulid'}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+  /accounting/ar/aging:
+    get:
+      tags: [AccountsReceivable]
+      operationId: arAgingReport
+      summary: AR aging report
+      security: [{bearerAuth: []}]
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /accounting/bank-accounts:
+    get:
+      tags: [Bank]
+      operationId: listBankAccounts
+      summary: List bank accounts
+      security: [{bearerAuth: []}]
+      responses:
+        '200': {$ref: '#/components/responses/GenericList'}
+    post:
+      tags: [Bank]
+      operationId: createBankAccount
+      summary: Create a bank/cash account
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, name, account_id]
+              properties:
+                code: {type: string, maxLength: 20}
+                name: {type: string, maxLength: 200}
+                account_id: {$ref: '#/components/schemas/Ulid'}
+                type: {type: string, enum: [checking,savings,cash_box]}
+                opening_balance: {type: integer}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+  /accounting/bank-accounts/{bank}/statement:
+    parameters:
+      - {name: bank, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+    get:
+      tags: [Bank]
+      operationId: bankStatement
+      summary: Bank account statement
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: from, in: query, schema: {type: string, format: date}}
+        - {name: to, in: query, schema: {type: string, format: date}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericList'}
+  /accounting/bank-accounts/{bank}/reconcile:
+    parameters:
+      - {name: bank, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+    post:
+      tags: [Bank]
+      operationId: reconcileBankTransactions
+      summary: Mark bank transactions as reconciled
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [transaction_ids]
+              properties:
+                transaction_ids: {type: array, items: {$ref: '#/components/schemas/Ulid'}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /accounting/budgets:
+    get:
+      tags: [Budget]
+      operationId: listBudgets
+      summary: List budgets
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: fiscal_year, in: query, schema: {type: string}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericList'}
+    post:
+      tags: [Budget]
+      operationId: createBudget
+      summary: Create a budget line
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [account_id, fiscal_year, period_month, budgeted_amount]
+              properties:
+                account_id: {$ref: '#/components/schemas/Ulid'}
+                fiscal_year: {type: string}
+                period_month: {type: integer, minimum: 1, maximum: 12}
+                budgeted_amount: {type: integer, minimum: 0}
+                cost_center_id: {$ref: '#/components/schemas/Ulid'}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+  /accounting/budgets/variance:
+    get:
+      tags: [Budget]
+      operationId: budgetVarianceReport
+      summary: Budget vs actual variance report
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: fiscal_year, in: query, required: true, schema: {type: string}}
+        - {name: period_month, in: query, schema: {type: integer}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /accounting/reports/trial-balance:
+    get:
+      tags: [FinancialReports]
+      operationId: trialBalance
+      summary: Trial balance report
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: fiscal_year, in: query, required: true, schema: {type: string}}
+        - {name: period_month, in: query, schema: {type: integer}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /accounting/reports/income-statement:
+    get:
+      tags: [FinancialReports]
+      operationId: incomeStatement
+      summary: Income statement (P&L)
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: fiscal_year, in: query, required: true, schema: {type: string}}
+        - {name: period_month, in: query, schema: {type: integer}}
+        - {name: branch_id, in: query, schema: {$ref: '#/components/schemas/Ulid'}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /accounting/reports/balance-sheet:
+    get:
+      tags: [FinancialReports]
+      operationId: balanceSheet
+      summary: Balance sheet
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: fiscal_year, in: query, required: true, schema: {type: string}}
+        - {name: period_month, in: query, schema: {type: integer}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /accounting/reports/cash-flow:
+    get:
+      tags: [FinancialReports]
+      operationId: cashFlowStatement
+      summary: Cash flow statement (indirect method)
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: fiscal_year, in: query, required: true, schema: {type: string}}
+        - {name: period_month, in: query, schema: {type: integer}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /accounting/reports/profitability:
+    get:
+      tags: [FinancialReports]
+      operationId: restaurantProfitability
+      summary: Restaurant profitability (food cost %, prime cost %)
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: fiscal_year, in: query, required: true, schema: {type: string}}
+        - {name: period_month, in: query, schema: {type: integer}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /accounting/reports/branch-accounting:
+    get:
+      tags: [FinancialReports]
+      operationId: branchAccounting
+      summary: Branch-level P&L breakdown
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: fiscal_year, in: query, required: true, schema: {type: string}}
+        - {name: period_month, in: query, schema: {type: integer}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /accounting/reports/general-ledger:
+    get:
+      tags: [FinancialReports]
+      operationId: generalLedger
+      summary: General ledger detail for an account
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: account_id, in: query, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+        - {name: from, in: query, schema: {type: string, format: date}}
+        - {name: to, in: query, schema: {type: string, format: date}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /accounting/projects:
+    get:
+      tags: [Accounting]
+      operationId: listProjects
+      summary: List accounting projects
+      security: [{bearerAuth: []}]
+      responses:
+        '200': {$ref: '#/components/responses/GenericList'}
+    post:
+      tags: [Accounting]
+      operationId: createProject
+      summary: Create a project
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, name]
+              properties:
+                code: {type: string, maxLength: 20}
+                name: {type: string, maxLength: 200}
+                budget_amount: {type: integer, minimum: 0}
+                start_date: {type: string, format: date, nullable: true}
+                end_date: {type: string, format: date, nullable: true}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+
+  # ── Procurement ─────────────────────────────────────────────────────────────
+  /procurement/suppliers:
+    get:
+      tags: [Procurement]
+      operationId: listProcurementSuppliers
+      summary: List suppliers (procurement view)
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: status, in: query, schema: {type: string, enum: [active,inactive]}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericList'}
+  /procurement/suppliers/{supplier}:
+    parameters:
+      - {name: supplier, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+    get:
+      tags: [Procurement]
+      operationId: showProcurementSupplier
+      summary: Get a supplier with procurement fields
+      security: [{bearerAuth: []}]
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+    patch:
+      tags: [Procurement]
+      operationId: updateProcurementSupplier
+      summary: Update procurement fields (category, rating, lead_time_days)
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [expected_version]
+              properties:
+                category: {type: string, nullable: true, maxLength: 50}
+                rating: {type: integer, minimum: 0, maximum: 100, nullable: true}
+                lead_time_days: {type: integer, minimum: 0, nullable: true}
+                expected_version: {type: integer, minimum: 0}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /procurement/suppliers/{supplier}/evaluations:
+    parameters:
+      - {name: supplier, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+    get:
+      tags: [Procurement]
+      operationId: listSupplierEvaluations
+      summary: List evaluations for a supplier
+      security: [{bearerAuth: []}]
+      responses:
+        '200': {$ref: '#/components/responses/GenericList'}
+    post:
+      tags: [Procurement]
+      operationId: createSupplierEvaluation
+      summary: Create a supplier evaluation
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [score]
+              properties:
+                score: {type: number, minimum: 0, maximum: 100}
+                criteria: {type: object, nullable: true}
+                notes: {type: string, nullable: true}
+                evaluated_at: {type: string, format: date-time, nullable: true}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+  /procurement/rfqs:
+    get:
+      tags: [ProcurementRFQ]
+      operationId: listRfqs
+      summary: List RFQs
+      security: [{bearerAuth: []}]
+      responses:
+        '200': {$ref: '#/components/responses/GenericList'}
+    post:
+      tags: [ProcurementRFQ]
+      operationId: createRfq
+      summary: Create a draft RFQ
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reference, items]
+              properties:
+                reference: {type: string, maxLength: 64}
+                notes: {type: string, nullable: true}
+                items:
+                  type: array
+                  items:
+                    type: object
+                    required: [description, quantity, unit]
+                    properties:
+                      description: {type: string}
+                      quantity: {type: number}
+                      unit: {type: string}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+  /procurement/rfqs/{rfq}/send:
+    parameters:
+      - {name: rfq, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+    post:
+      tags: [ProcurementRFQ]
+      operationId: sendRfq
+      summary: Send an RFQ (draft → sent)
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [expected_version], properties: {expected_version: {type: integer}}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /procurement/quotations:
+    get:
+      tags: [ProcurementRFQ]
+      operationId: listQuotations
+      summary: List quotations (optionally filtered by rfq_id)
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: rfq_id, in: query, schema: {$ref: '#/components/schemas/Ulid'}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericList'}
+    post:
+      tags: [ProcurementRFQ]
+      operationId: createQuotation
+      summary: Record a quotation received from a supplier
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [supplier_id, reference, items]
+              properties:
+                supplier_id: {$ref: '#/components/schemas/Ulid'}
+                rfq_id: {$ref: '#/components/schemas/Ulid'}
+                reference: {type: string, maxLength: 64}
+                total_amount: {type: integer, minimum: 0}
+                items: {type: array, items: {type: object}}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+  /procurement/quotations/{quotation}/award:
+    parameters:
+      - {name: quotation, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+    post:
+      tags: [ProcurementRFQ]
+      operationId: awardQuotation
+      summary: Award a quotation
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [expected_version], properties: {expected_version: {type: integer}}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /procurement/purchase-requests:
+    get:
+      tags: [ProcurementPO]
+      operationId: listProcurementPRs
+      summary: List purchase requests
+      security: [{bearerAuth: []}]
+      responses:
+        '200': {$ref: '#/components/responses/GenericList'}
+    post:
+      tags: [ProcurementPO]
+      operationId: createProcurementPR
+      summary: Create a draft purchase request
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reference, items]
+              properties:
+                reference: {type: string, maxLength: 64}
+                items: {type: array, items: {type: object}}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+  /procurement/purchase-requests/{pr}/approve:
+    parameters:
+      - {name: pr, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+    post:
+      tags: [ProcurementPO]
+      operationId: approveProcurementPR
+      summary: Approve a purchase request
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [expected_version], properties: {expected_version: {type: integer}}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /procurement/purchase-orders:
+    get:
+      tags: [ProcurementPO]
+      operationId: listPurchaseOrders
+      summary: List purchase orders
+      security: [{bearerAuth: []}]
+      responses:
+        '200': {$ref: '#/components/responses/GenericList'}
+    post:
+      tags: [ProcurementPO]
+      operationId: createPurchaseOrder
+      summary: Create a draft purchase order
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [supplier_id, reference, items]
+              properties:
+                supplier_id: {$ref: '#/components/schemas/Ulid'}
+                reference: {type: string, maxLength: 64}
+                items: {type: array, items: {type: object}}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+  /procurement/purchase-orders/{po}/approve:
+    parameters:
+      - {name: po, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+    post:
+      tags: [ProcurementPO]
+      operationId: approvePurchaseOrder
+      summary: Approve a purchase order (draft → approved)
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [expected_version], properties: {expected_version: {type: integer}}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /procurement/purchase-orders/{po}/send:
+    parameters:
+      - {name: po, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+    post:
+      tags: [ProcurementPO]
+      operationId: sendPurchaseOrder
+      summary: Send a purchase order to supplier (approved → sent)
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [expected_version], properties: {expected_version: {type: integer}}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /procurement/receipts:
+    get:
+      tags: [ProcurementReceiving]
+      operationId: listGoodsReceipts
+      summary: List goods receipts
+      security: [{bearerAuth: []}]
+      responses:
+        '200': {$ref: '#/components/responses/GenericList'}
+    post:
+      tags: [ProcurementReceiving]
+      operationId: createGoodsReceipt
+      summary: Create a draft goods receipt
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reference, items]
+              properties:
+                reference: {type: string, maxLength: 64}
+                purchase_order_id: {$ref: '#/components/schemas/Ulid'}
+                items: {type: array, items: {type: object}}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+  /procurement/receipts/{receipt}/post:
+    parameters:
+      - {name: receipt, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+    post:
+      tags: [ProcurementReceiving]
+      operationId: postGoodsReceipt
+      summary: Post a goods receipt (draft → posted)
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [expected_version], properties: {expected_version: {type: integer}}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /procurement/receipts/{receipt}/inspection:
+    parameters:
+      - {name: receipt, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+    post:
+      tags: [ProcurementReceiving]
+      operationId: createInspection
+      summary: Create an inspection for a goods receipt
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notes: {type: string, nullable: true}
+                findings: {type: object, nullable: true}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+  /procurement/inspections/{inspection}/pass:
+    parameters:
+      - {name: inspection, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+    post:
+      tags: [ProcurementReceiving]
+      operationId: passInspection
+      summary: Mark inspection as passed
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [expected_version], properties: {expected_version: {type: integer}}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /procurement/contracts:
+    get:
+      tags: [ProcurementContracts]
+      operationId: listVendorContracts
+      summary: List vendor contracts
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: status, in: query, schema: {type: string, enum: [active,expired,terminated]}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericList'}
+    post:
+      tags: [ProcurementContracts]
+      operationId: createVendorContract
+      summary: Create a vendor contract
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [supplier_id, reference, start_date]
+              properties:
+                supplier_id: {$ref: '#/components/schemas/Ulid'}
+                reference: {type: string, maxLength: 64}
+                start_date: {type: string, format: date}
+                end_date: {type: string, format: date, nullable: true}
+                value_amount: {type: integer, minimum: 0}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+  /procurement/payment-schedules:
+    get:
+      tags: [ProcurementContracts]
+      operationId: listPaymentSchedules
+      summary: List payment schedules
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: status, in: query, schema: {type: string, enum: [pending,paid,overdue]}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericList'}
+    post:
+      tags: [ProcurementContracts]
+      operationId: createPaymentSchedule
+      summary: Create a payment schedule milestone
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [supplier_id, reference, due_date, amount]
+              properties:
+                supplier_id: {$ref: '#/components/schemas/Ulid'}
+                reference: {type: string, maxLength: 64}
+                due_date: {type: string, format: date}
+                amount: {type: integer, minimum: 0}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+  /procurement/payment-schedules/{schedule}/pay:
+    parameters:
+      - {name: schedule, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+    post:
+      tags: [ProcurementContracts]
+      operationId: markPaymentSchedulePaid
+      summary: Mark a payment schedule as paid
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [expected_version], properties: {expected_version: {type: integer}}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+
+  # ── HR Module ───────────────────────────────────────────────────────────────
+  /api/v1/hr/departments:
+    get:
+      tags: [HRDepartments]
+      operationId: hrDepartmentsList
+      summary: List departments
+      security: [{bearerAuth: []}]
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+    post:
+      tags: [HRDepartments]
+      operationId: hrDepartmentsCreate
+      summary: Create a department
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, name]
+              properties:
+                code: {type: string}
+                name: {type: string}
+                type: {type: string, enum: [department, section, team]}
+                parent_id: {type: string}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+  /api/v1/hr/departments/{department}:
+    get:
+      tags: [HRDepartments]
+      operationId: hrDepartmentsShow
+      summary: Get a department
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: department, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+    patch:
+      tags: [HRDepartments]
+      operationId: hrDepartmentsUpdate
+      summary: Update a department
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: department, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [expected_version], properties: {name: {type: string}, status: {type: string}, expected_version: {type: integer}}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+
+  /api/v1/hr/employees:
+    get:
+      tags: [HREmployees]
+      operationId: hrEmployeesList
+      summary: List employees
+      security: [{bearerAuth: []}]
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+    post:
+      tags: [HREmployees]
+      operationId: hrEmployeesCreate
+      summary: Hire an employee
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [employee_number, first_name, last_name]
+              properties:
+                employee_number: {type: string}
+                first_name: {type: string}
+                last_name: {type: string}
+                phone: {type: string, nullable: true}
+                position: {type: string, nullable: true}
+                hire_date: {type: string, format: date, nullable: true}
+                employment_type: {type: string, enum: [full_time, part_time, contract]}
+                department_id: {type: string, nullable: true}
+                base_salary_amount: {type: integer, nullable: true}
+                currency: {type: string, nullable: true}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+  /api/v1/hr/employees/{employee}:
+    get:
+      tags: [HREmployees]
+      operationId: hrEmployeesShow
+      summary: Get an employee
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: employee, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+    patch:
+      tags: [HREmployees]
+      operationId: hrEmployeesUpdate
+      summary: Update an employee
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: employee, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [expected_version], properties: {first_name: {type: string}, last_name: {type: string}, status: {type: string}, expected_version: {type: integer}}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /api/v1/hr/employees/{employee}/history:
+    get:
+      tags: [HREmployees]
+      operationId: hrEmployeesHistory
+      summary: Get employee change history
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: employee, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /api/v1/hr/employees/{employee}/attendance:
+    get:
+      tags: [HRAttendance]
+      operationId: hrAttendanceList
+      summary: List attendance records for an employee
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: employee, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+        - {name: from, in: query, schema: {type: string, format: date}}
+        - {name: to, in: query, schema: {type: string, format: date}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /api/v1/hr/employees/{employee}/documents:
+    get:
+      tags: [HRDocuments]
+      operationId: hrDocumentsList
+      summary: List employee documents
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: employee, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+    post:
+      tags: [HRDocuments]
+      operationId: hrDocumentsCreate
+      summary: Upload a document for an employee
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: employee, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [document_type, title], properties: {document_type: {type: string}, title: {type: string}, file_path: {type: string, nullable: true}, expiry_date: {type: string, format: date, nullable: true}}}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+  /api/v1/hr/employees/{employee}/documents/{document}:
+    delete:
+      tags: [HRDocuments]
+      operationId: hrDocumentsDelete
+      summary: Delete an employee document
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: employee, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+        - {name: document, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+
+  /api/v1/hr/attendance/check-in:
+    post:
+      tags: [HRAttendance]
+      operationId: hrAttendanceCheckIn
+      summary: Clock in (GPS / photo)
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [employee_id], properties: {employee_id: {type: string}, work_date: {type: string, format: date}, lat: {type: number, nullable: true}, lng: {type: number, nullable: true}, photo: {type: string, nullable: true}}}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+  /api/v1/hr/attendance/{attendance}/check-out:
+    post:
+      tags: [HRAttendance]
+      operationId: hrAttendanceCheckOut
+      summary: Clock out
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: attendance, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [expected_version], properties: {lat: {type: number, nullable: true}, lng: {type: number, nullable: true}, photo: {type: string, nullable: true}, expected_version: {type: integer}}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+
+  /api/v1/hr/geofences:
+    get:
+      tags: [HRGeofences]
+      operationId: hrGeofencesList
+      summary: List geofences
+      security: [{bearerAuth: []}]
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+    post:
+      tags: [HRGeofences]
+      operationId: hrGeofencesCreate
+      summary: Create a geofence
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [name, center_lat, center_lng], properties: {name: {type: string}, center_lat: {type: number}, center_lng: {type: number}, radius_meters: {type: integer}}}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+  /api/v1/hr/geofences/{geofence}:
+    patch:
+      tags: [HRGeofences]
+      operationId: hrGeofencesUpdate
+      summary: Update a geofence
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: geofence, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [expected_version], properties: {name: {type: string}, radius_meters: {type: integer}, is_active: {type: boolean}, expected_version: {type: integer}}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+
+  /api/v1/hr/leave:
+    get:
+      tags: [HRLeave]
+      operationId: hrLeaveList
+      summary: List leave requests
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: employee_id, in: query, schema: {type: string}}
+        - {name: status, in: query, schema: {type: string}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+    post:
+      tags: [HRLeave]
+      operationId: hrLeaveCreate
+      summary: Submit a leave request
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [employee_id, start_date, end_date], properties: {employee_id: {type: string}, leave_type: {type: string}, start_date: {type: string, format: date}, end_date: {type: string, format: date}, days: {type: number}, reason: {type: string, nullable: true}}}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+  /api/v1/hr/leave/{leave}:
+    get:
+      tags: [HRLeave]
+      operationId: hrLeaveShow
+      summary: Get a leave request
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: leave, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /api/v1/hr/leave/{leave}/approve:
+    post:
+      tags: [HRLeave]
+      operationId: hrLeaveApprove
+      summary: Approve a leave request
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: leave, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [expected_version], properties: {expected_version: {type: integer}}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /api/v1/hr/leave/{leave}/reject:
+    post:
+      tags: [HRLeave]
+      operationId: hrLeaveReject
+      summary: Reject a leave request
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: leave, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [expected_version], properties: {expected_version: {type: integer}, reason: {type: string, nullable: true}}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+
+  /api/v1/hr/loans:
+    get:
+      tags: [HRLoans]
+      operationId: hrLoansList
+      summary: List loans
+      security: [{bearerAuth: []}]
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+    post:
+      tags: [HRLoans]
+      operationId: hrLoansCreate
+      summary: Request a loan or salary advance
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [employee_id, amount], properties: {employee_id: {type: string}, loan_type: {type: string, enum: [advance, long_term]}, amount: {type: integer}, installments: {type: integer}, purpose: {type: string, nullable: true}}}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+  /api/v1/hr/loans/{loan}:
+    get:
+      tags: [HRLoans]
+      operationId: hrLoansShow
+      summary: Get a loan
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: loan, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /api/v1/hr/loans/{loan}/approve:
+    post:
+      tags: [HRLoans]
+      operationId: hrLoansApprove
+      summary: Approve a loan
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: loan, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [expected_version], properties: {expected_version: {type: integer}}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+
+  /api/v1/hr/payroll:
+    get:
+      tags: [HRPayroll]
+      operationId: hrPayrollList
+      summary: List payroll runs
+      security: [{bearerAuth: []}]
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+    post:
+      tags: [HRPayroll]
+      operationId: hrPayrollCreate
+      summary: Create a payroll run
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [period_start, period_end], properties: {period_start: {type: string, format: date}, period_end: {type: string, format: date}}}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+  /api/v1/hr/payroll/{run}:
+    get:
+      tags: [HRPayroll]
+      operationId: hrPayrollShow
+      summary: Get a payroll run
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: run, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /api/v1/hr/payroll/{run}/calculate:
+    post:
+      tags: [HRPayroll]
+      operationId: hrPayrollCalculate
+      summary: Calculate payslips for a run
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: run, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [expected_version], properties: {expected_version: {type: integer}}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /api/v1/hr/payroll/{run}/approve:
+    post:
+      tags: [HRPayroll]
+      operationId: hrPayrollApprove
+      summary: Approve a payroll run
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: run, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [expected_version], properties: {expected_version: {type: integer}}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /api/v1/hr/payroll/{run}/payslip:
+    get:
+      tags: [HRPayroll]
+      operationId: hrPayrollPayslip
+      summary: Get payslip for an employee in a run
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: run, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+        - {name: employee_id, in: query, required: true, schema: {type: string}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /api/v1/hr/payroll/{run}/adjustments:
+    post:
+      tags: [HRPayroll]
+      operationId: hrPayrollAdjustment
+      summary: Add bonus or penalty to a draft run
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: run, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [employee_id, type, amount], properties: {employee_id: {type: string}, type: {type: string, enum: [bonus, penalty]}, amount: {type: integer}, reason: {type: string, nullable: true}}}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+
+  /api/v1/hr/performance:
+    get:
+      tags: [HRPerformance]
+      operationId: hrPerformanceList
+      summary: List performance reviews
+      security: [{bearerAuth: []}]
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+    post:
+      tags: [HRPerformance]
+      operationId: hrPerformanceCreate
+      summary: Create a performance review
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [employee_id], properties: {employee_id: {type: string}, score: {type: integer, nullable: true}, rating: {type: string, nullable: true}, comments: {type: string, nullable: true}}}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+  /api/v1/hr/performance/{review}:
+    get:
+      tags: [HRPerformance]
+      operationId: hrPerformanceShow
+      summary: Get a performance review
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: review, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /api/v1/hr/performance/{review}/acknowledge:
+    post:
+      tags: [HRPerformance]
+      operationId: hrPerformanceAcknowledge
+      summary: Employee acknowledges a performance review
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: review, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [expected_version], properties: {expected_version: {type: integer}}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+
+  /api/v1/hr/tasks:
+    get:
+      tags: [HRTasks]
+      operationId: hrTasksList
+      summary: List HR tasks
+      security: [{bearerAuth: []}]
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+    post:
+      tags: [HRTasks]
+      operationId: hrTasksCreate
+      summary: Create a task
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [employee_id, title], properties: {employee_id: {type: string}, title: {type: string}, description: {type: string, nullable: true}, due_date: {type: string, format: date, nullable: true}, priority: {type: string, enum: [low, normal, high, urgent]}}}
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+  /api/v1/hr/tasks/{task}:
+    get:
+      tags: [HRTasks]
+      operationId: hrTasksShow
+      summary: Get a task
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: task, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+    patch:
+      tags: [HRTasks]
+      operationId: hrTasksUpdate
+      summary: Update a task
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: task, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [expected_version], properties: {title: {type: string}, status: {type: string}, expected_version: {type: integer}}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /api/v1/hr/tasks/{task}/complete:
+    post:
+      tags: [HRTasks]
+      operationId: hrTasksComplete
+      summary: Mark a task as done
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: task, in: path, required: true, schema: {$ref: '#/components/schemas/Ulid'}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [expected_version], properties: {expected_version: {type: integer}}}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+
 components:
   securitySchemes:
     bearerAuth:
@@ -2065,6 +4799,17 @@ components:
       required: true
       schema: {$ref: '#/components/schemas/Ulid'}
   requestBodies:
+    KitchenAction:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [expected_version, client_operation_id]
+            properties:
+              expected_version: {type: integer, minimum: 0}
+              client_operation_id: {type: string, maxLength: 128, pattern: '^[A-Za-z0-9._:-]+$'}
+              reason: {type: string, nullable: true, maxLength: 500}
     ChangePassword:
       required: true
       content:
@@ -2089,6 +4834,25 @@ components:
       content:
         application/json:
           schema: {$ref: '#/components/schemas/RoleRequest'}
+    VersionOnly:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [expected_version]
+            properties:
+              expected_version: {type: integer, minimum: 0}
+    ReservationConfirm:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [expected_version]
+            properties:
+              expected_version: {type: integer, minimum: 0}
+              confirmation_channel: {type: string, nullable: true, maxLength: 32}
   responses:
     Error:
       description: Stable error envelope.
@@ -2100,6 +4864,16 @@ components:
       content:
         application/json:
           schema: {$ref: '#/components/schemas/ValidationErrorEnvelope'}
+    GenericData:
+      description: Single resource wrapped in the standard data envelope.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/DataEnvelope'}
+    GenericList:
+      description: Paginated collection wrapped in the standard list envelope.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ListEnvelope'}
     TokenPair:
       description: Access JWT and opaque rotating refresh token.
       content:
@@ -2292,16 +5066,16 @@ components:
         employee_code: {type: string, nullable: true}
         preferred_locale: {type: string}
         tenant_id: {$ref: '#/components/schemas/Ulid'}
-        branch_id: {allOf: [{$ref: '#/components/schemas/Ulid'}], nullable: true}
-        device_id: {allOf: [{$ref: '#/components/schemas/Ulid'}], nullable: true}
+        branch_id: {type: string, nullable: true, pattern: '^[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$'}
+        device_id: {type: string, nullable: true, pattern: '^[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$'}
         permissions: {type: array, uniqueItems: true, items: {type: string}}
     Session:
       type: object
       required: [id, authentication_method, expires_at]
       properties:
         id: {$ref: '#/components/schemas/Ulid'}
-        branch_id: {allOf: [{$ref: '#/components/schemas/Ulid'}], nullable: true}
-        device_id: {allOf: [{$ref: '#/components/schemas/Ulid'}], nullable: true}
+        branch_id: {type: string, nullable: true, pattern: '^[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$'}
+        device_id: {type: string, nullable: true, pattern: '^[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$'}
         authentication_method: {type: string}
         ip_address: {type: string, nullable: true}
         user_agent: {type: string, nullable: true}
@@ -2313,7 +5087,7 @@ components:
       required: [tenant_slug, code, name, type, key_fingerprint]
       properties:
         tenant_slug: {type: string, maxLength: 100}
-        branch_id: {allOf: [{$ref: '#/components/schemas/Ulid'}], nullable: true}
+        branch_id: {type: string, nullable: true, pattern: '^[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$'}
         code: {type: string, maxLength: 64, pattern: '^[A-Za-z0-9._-]+$'}
         name: {type: string, maxLength: 255}
         type: {type: string, enum: [pos, kiosk, mobile, desktop, other]}
@@ -2326,7 +5100,7 @@ components:
       required: [id, code, name, type, status]
       properties:
         id: {$ref: '#/components/schemas/Ulid'}
-        branch_id: {allOf: [{$ref: '#/components/schemas/Ulid'}], nullable: true}
+        branch_id: {type: string, nullable: true, pattern: '^[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$'}
         code: {type: string}
         name: {type: string}
         type: {type: string, enum: [pos, kiosk, mobile, desktop, other]}
@@ -2383,7 +5157,7 @@ components:
         label: {type: string, nullable: true}
         description: {type: string, nullable: true}
         risk_level: {type: string}
-        group_id: {allOf: [{$ref: '#/components/schemas/Ulid'}], nullable: true}
+        group_id: {type: string, nullable: true, pattern: '^[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$'}
     PermissionGroup:
       type: object
       required: [id, code, name, permissions]
@@ -2418,13 +5192,13 @@ components:
       required: [id, category, action, source, result, occurred_at, recorded_at]
       properties:
         id: {$ref: '#/components/schemas/Ulid'}
-        branch_id: {allOf: [{$ref: '#/components/schemas/Ulid'}], nullable: true}
+        branch_id: {type: string, nullable: true, pattern: '^[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$'}
         category: {type: string}
         action: {type: string}
         source: {type: string}
         result: {type: string}
         reason: {type: string, nullable: true}
-        actor_id: {allOf: [{$ref: '#/components/schemas/Ulid'}], nullable: true}
+        actor_id: {type: string, nullable: true, pattern: '^[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$'}
         occurred_at: {type: string, format: date-time}
         recorded_at: {type: string, format: date-time}
     BooleanActionEnvelope:
