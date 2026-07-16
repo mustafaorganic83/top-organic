@@ -48,9 +48,16 @@ security/logging/audit, and DevOps/CI-CD.
 
 المعمارية الكاملة موثّقة في [`docs/architecture/`](docs/architecture/README.md).
 
+Implemented identity documentation:
+
+- [Authentication and authorization security](docs/security/authentication-authorization.md)
+- [Authentication API v1 (34 routes)](docs/api/authentication-v1.md) and [OpenAPI](docs/api/openapi-v1.yaml)
+- [Flutter authentication and offline-login flow](docs/flutter/authentication-flow.md)
+
 ---
 
 ## Status | الحالة
 
-🚧 **Under active development** — يتم بناء هذا النظام تدريجياً بواسطة خبير Cosmos وفق
-المعمارية المعتمدة في [`docs/architecture/`](docs/architecture/README.md).
+🚧 **Under active development** — the identity foundation and its API/client contracts are
+implemented and documented; remaining modules are being built incrementally against the
+approved [`docs/architecture/`](docs/architecture/README.md).
