@@ -41,7 +41,8 @@ return new class extends Migration
             $table->ulid('id')->primary();
             $table->foreignUlid('tenant_id')->constrained()->restrictOnDelete();
             $table->foreignUlid('branch_id')->constrained()->restrictOnDelete();
-            $table->foreignUlid('user_id')->nullable()->constrained()->nullOnDelete();
+            $table->unsignedBigInteger('user_id')->nullable();
+            $table->foreign('user_id')->references('id')->on('users')->nullOnDelete();
             $table->foreignUlid('department_id')->nullable()->constrained()->nullOnDelete();
             $table->string('code', 64);
             $table->string('first_name', 120);
