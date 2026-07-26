@@ -73,6 +73,7 @@ Route::middleware('api')->prefix('api/v1')->group(function (): void {
 });
 
 Route::middleware('web')->group(function (): void {
+    Route::get('login', fn () => view('auth.login'))->name('login');
     Route::post('login', [WebSessionController::class, 'login'])->middleware('throttle:identity-auth');
     Route::post('logout', [WebSessionController::class, 'logout'])->middleware('auth:web');
 });
