@@ -22,6 +22,7 @@ return [
 
     'allowed_origins_patterns' => [
         '#^https://top-organic-dashboard.*\.vercel\.app$#',
+        '#^http://localhost(:[0-9]+)?$#',
     ],
 
     'allowed_headers' => ['*'],

@@ -56,7 +56,269 @@ tags:
   - name: HRPerformance
   - name: HRDocuments
   - name: HRTasks
+  - name: Prepared
+  - name: Costing
+  - name: Snapshots
+  - name: Production
+  - name: Reports
+  - name: Permissions
 paths:
+  # ─── ERP / Reports (v1 mirror of /api/reports) ─────────────────────────────
+  /reports:
+    get:
+      tags: [Reports]
+      operationId: listReports
+      summary: List available reports
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /reports/{key}:
+    parameters:
+      - name: key
+        in: path
+        required: true
+        schema: {type: string}
+    get:
+      tags: [Reports]
+      operationId: runReport
+      summary: Run a report
+      parameters:
+        - name: format
+          in: query
+          schema: {type: string, enum: [json, csv, excel, pdf]}
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /reports/{key}/drilldown:
+    parameters:
+      - name: key
+        in: path
+        required: true
+        schema: {type: string}
+    get:
+      tags: [Reports]
+      operationId: drilldownReport
+      summary: Drilldown into a report group
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+
+  # ─── Recipes ────────────────────────────────────────────────────────────────
+  /recipes:
+    get:
+      tags: [Recipes]
+      operationId: listRecipes
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+    post:
+      tags: [Recipes]
+      operationId: createRecipe
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+  /recipes/{recipe}:
+    parameters:
+      - name: recipe
+        in: path
+        required: true
+        schema: {$ref: '#/components/schemas/Ulid'}
+    get:
+      tags: [Recipes]
+      operationId: getRecipe
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /recipes/{recipe}/versions:
+    parameters:
+      - name: recipe
+        in: path
+        required: true
+        schema: {$ref: '#/components/schemas/Ulid'}
+    get:
+      tags: [Recipes]
+      operationId: listRecipeVersions
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+    post:
+      tags: [Recipes]
+      operationId: createRecipeVersion
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+  /recipes/versions/{version}/publish:
+    parameters:
+      - name: version
+        in: path
+        required: true
+        schema: {$ref: '#/components/schemas/Ulid'}
+    post:
+      tags: [Recipes]
+      operationId: publishRecipeVersion
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /recipes/versions/{version}/activate:
+    parameters:
+      - name: version
+        in: path
+        required: true
+        schema: {$ref: '#/components/schemas/Ulid'}
+    post:
+      tags: [Recipes]
+      operationId: activateRecipeVersion
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+
+  # ─── Prepared Items ─────────────────────────────────────────────────────────
+  /prepared-items:
+    get:
+      tags: [Prepared]
+      operationId: listPreparedItems
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+    post:
+      tags: [Prepared]
+      operationId: createPreparedItem
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+  /prepared-items/{prepared}:
+    parameters:
+      - name: prepared
+        in: path
+        required: true
+        schema: {$ref: '#/components/schemas/Ulid'}
+    get:
+      tags: [Prepared]
+      operationId: getPreparedItem
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /prepared-items/{prepared}/recipe:
+    parameters:
+      - name: prepared
+        in: path
+        required: true
+        schema: {$ref: '#/components/schemas/Ulid'}
+    get:
+      tags: [Prepared]
+      operationId: getPreparedItemRecipe
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+
+  # ─── Inventory ──────────────────────────────────────────────────────────────
+  /inventory/stock-levels:
+    get:
+      tags: [Inventory]
+      operationId: listStockLevels
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /inventory/movements:
+    get:
+      tags: [Inventory]
+      operationId: listMovements
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+    post:
+      tags: [Inventory]
+      operationId: createMovement
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+
+  # ─── Costing ────────────────────────────────────────────────────────────────
+  /costing/ingredient/{stockItem}:
+    parameters:
+      - name: stockItem
+        in: path
+        required: true
+        schema: {$ref: '#/components/schemas/Ulid'}
+    get:
+      tags: [Costing]
+      operationId: ingredientUnitCost
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /costing/recipes/{version}:
+    parameters:
+      - name: version
+        in: path
+        required: true
+        schema: {$ref: '#/components/schemas/Ulid'}
+    get:
+      tags: [Costing]
+      operationId: recipeVersionCost
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /costing/recipes/{recipe}/active:
+    parameters:
+      - name: recipe
+        in: path
+        required: true
+        schema: {$ref: '#/components/schemas/Ulid'}
+    get:
+      tags: [Costing]
+      operationId: recipeActiveCost
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /costing/snapshots:
+    post:
+      tags: [Snapshots]
+      operationId: createCostSnapshot
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+
+  # ─── Snapshots ──────────────────────────────────────────────────────────────
+  /snapshots:
+    get:
+      tags: [Snapshots]
+      operationId: listSnapshots
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /snapshots/{snapshot}:
+    parameters:
+      - name: snapshot
+        in: path
+        required: true
+        schema: {$ref: '#/components/schemas/Ulid'}
+    get:
+      tags: [Snapshots]
+      operationId: getSnapshot
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+
+  # ─── Production ─────────────────────────────────────────────────────────────
+  /production/orders:
+    get:
+      tags: [Production]
+      operationId: listProductionOrders
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+    post:
+      tags: [Production]
+      operationId: createProductionOrder
+      responses:
+        '201': {$ref: '#/components/responses/GenericData'}
+  /production/orders/{order}:
+    parameters:
+      - name: order
+        in: path
+        required: true
+        schema: {$ref: '#/components/schemas/Ulid'}
+    get:
+      tags: [Production]
+      operationId: getProductionOrder
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /production/orders/{order}/start:
+    post:
+      tags: [Production]
+      operationId: startProductionOrder
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+  /production/orders/{order}/complete:
+    post:
+      tags: [Production]
+      operationId: completeProductionOrder
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
+
+  # ─── Permissions ────────────────────────────────────────────────────────────
+  /permissions:
+    get:
+      tags: [Permissions]
+      operationId: listPermissions
+      responses:
+        '200': {$ref: '#/components/responses/GenericData'}
   /auth/login:
     post:
       tags: [Authentication]

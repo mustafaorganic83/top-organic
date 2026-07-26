@@ -11,6 +11,7 @@
         "laravel/reverb": "^1.10",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
+        "livewire/livewire": "^3",
         "php-open-source-saver/jwt-auth": "^2.9"
     },
     "require-dev": {
