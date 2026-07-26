@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -26,5 +27,12 @@ class SemiFinishedProduct extends TenantScopedModel
     public function recipe(): MorphOne
     {
         return $this->morphOne(Recipe::class, 'owner', 'owner_type', 'owner_id');
+    }
+
+    /** Every BOM line that consumes this semi-finished product. */
+    public function recipeComponents(): HasMany
+    {
+        return $this->hasMany(RecipeComponent::class, 'component_id')
+            ->where('component_type', 'semi_finished_product');
     }
 }

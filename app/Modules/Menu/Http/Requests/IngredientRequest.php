@@ -15,15 +15,18 @@ class IngredientRequest extends MenuRequest
     /** @return array<string, mixed> */
     public function rules(): array
     {
-        if ($this->routeIs('menu.semi-finished.store')) {
+        if ($this->routeIs('menu.semi-finished.*')) {
+            $isSemiUpdate = $this->routeIs('menu.semi-finished.update');
+
             return [...$this->scopeRules(),
-                'sku' => ['required', 'string', 'max:96'],
-                'name' => ['required', 'string', 'max:255'],
-                'yield_unit' => ['required', 'string', 'max:24'],
+                'sku' => [$isSemiUpdate ? 'prohibited' : 'required', 'string', 'max:96'],
+                'name' => [$isSemiUpdate ? 'sometimes' : 'required', 'string', 'max:255'],
+                'yield_unit' => [$isSemiUpdate ? 'sometimes' : 'required', 'string', 'max:24'],
                 'yield_quantity' => ['sometimes', 'numeric', 'min:0'],
                 'calories_per_unit' => ['sometimes', 'nullable', 'integer', 'min:0'],
                 'nutrition' => ['sometimes', 'nullable', 'array'],
                 'status' => ['sometimes', Rule::in(['active', 'inactive'])],
+                'expected_version' => $isSemiUpdate ? $this->version() : ['prohibited'],
             ];
         }
 

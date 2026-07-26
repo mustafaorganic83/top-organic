@@ -5,6 +5,7 @@ use App\Http\Middleware\RequirePermission;
 use App\Http\Middleware\RequirePosDevice;
 use App\Http\Middleware\ResolveContext;
 use App\Http\Middleware\SetLocale;
+use App\Http\Middleware\WebSessionContext;
 use App\Modules\Accounting\Exceptions\AccountingException;
 use App\Modules\Identity\Exceptions\IdentityException;
 use App\Modules\Inventory\Exceptions\InventoryException;
@@ -39,6 +40,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => RequirePermission::class,
             'pos.device' => RequirePosDevice::class,
             'set.locale' => SetLocale::class,
+            'web.context' => WebSessionContext::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

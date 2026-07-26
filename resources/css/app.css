@@ -6,6 +6,16 @@
 @source '../**/*.js';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    --font-sans: 'Cairo', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+/* Arabic is the primary experience, so numerals and tables read LTR inside an
+   RTL document without the browser reordering digits or column groups. */
+@layer base {
+    [dir='rtl'] .tabular {
+        direction: ltr;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+    }
 }

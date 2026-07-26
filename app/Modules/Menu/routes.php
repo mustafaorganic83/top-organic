@@ -19,6 +19,7 @@ Route::middleware(['api', 'auth:api', 'identity.context'])->prefix('api/v1/menu'
         Route::get('/', [MenuController::class, 'categories'])->middleware('permission:menu.view');
         Route::post('/', [MenuController::class, 'storeCategory'])->name('categories.store')->middleware('permission:menu.manage');
         Route::patch('{category}', [MenuController::class, 'updateCategory'])->whereUlid('category')->name('categories.update')->middleware('permission:menu.manage');
+        Route::delete('{category}', [MenuController::class, 'destroyCategory'])->whereUlid('category')->name('categories.destroy')->middleware('permission:menu.manage');
     });
 
     // Products, their meal-size variants, and modifier attachment.
@@ -27,8 +28,10 @@ Route::middleware(['api', 'auth:api', 'identity.context'])->prefix('api/v1/menu'
         Route::post('/', [MenuController::class, 'storeProduct'])->name('products.store')->middleware('permission:menu.manage');
         Route::get('{product}', [MenuController::class, 'showProduct'])->whereUlid('product')->middleware('permission:menu.view');
         Route::patch('{product}', [MenuController::class, 'updateProduct'])->whereUlid('product')->name('products.update')->middleware('permission:menu.manage');
+        Route::delete('{product}', [MenuController::class, 'destroyProduct'])->whereUlid('product')->name('products.destroy')->middleware('permission:menu.manage');
         Route::post('{product}/variants', [MenuController::class, 'storeVariant'])->whereUlid('product')->name('products.variants.store')->middleware('permission:menu.manage');
         Route::patch('{product}/variants/{variant}', [MenuController::class, 'updateVariant'])->whereUlid('product')->whereUlid('variant')->name('products.variants.update')->middleware('permission:menu.manage');
+        Route::delete('{product}/variants/{variant}', [MenuController::class, 'destroyVariant'])->whereUlid('product')->whereUlid('variant')->name('products.variants.destroy')->middleware('permission:menu.manage');
         Route::post('{product}/modifiers', [MenuController::class, 'attachModifierGroup'])->whereUlid('product')->name('products.modifiers.attach')->middleware('permission:menu.manage');
     });
 
@@ -52,10 +55,13 @@ Route::middleware(['api', 'auth:api', 'identity.context'])->prefix('api/v1/menu'
         Route::get('/', [IngredientController::class, 'index'])->middleware('permission:menu.view');
         Route::post('/', [IngredientController::class, 'store'])->name('ingredients.store')->middleware('permission:recipe.manage');
         Route::patch('{ingredient}', [IngredientController::class, 'update'])->whereUlid('ingredient')->name('ingredients.update')->middleware('permission:recipe.manage');
+        Route::delete('{ingredient}', [IngredientController::class, 'destroy'])->whereUlid('ingredient')->name('ingredients.destroy')->middleware('permission:recipe.manage');
     });
     Route::prefix('semi-finished')->group(function (): void {
         Route::get('/', [IngredientController::class, 'semiFinished'])->middleware('permission:menu.view');
         Route::post('/', [IngredientController::class, 'storeSemiFinished'])->name('semi-finished.store')->middleware('permission:recipe.manage');
+        Route::patch('{semiFinished}', [IngredientController::class, 'updateSemiFinished'])->whereUlid('semiFinished')->name('semi-finished.update')->middleware('permission:recipe.manage');
+        Route::delete('{semiFinished}', [IngredientController::class, 'destroySemiFinished'])->whereUlid('semiFinished')->name('semi-finished.destroy')->middleware('permission:recipe.manage');
     });
 
     // Allergen catalog.

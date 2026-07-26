@@ -6,6 +6,7 @@ namespace App\Modules\Menu\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Menu\Http\Requests\CategoryRequest;
+use App\Modules\Menu\Http\Requests\DeletionRequest;
 use App\Modules\Menu\Http\Requests\MenuRequest;
 use App\Modules\Menu\Http\Requests\ModifierRequest;
 use App\Modules\Menu\Http\Requests\ProductRequest;
@@ -42,6 +43,14 @@ class MenuController extends Controller
         return response()->json(['data' => MenuResource::category($model)]);
     }
 
+    public function destroyCategory(string $category, DeletionRequest $request, MenuService $service): JsonResponse
+    {
+        $service->deleteCategory($request->menuContext(), $category,
+            (int) $request->validated('expected_version'));
+
+        return response()->json(status: 204);
+    }
+
     public function products(MenuRequest $request, MenuService $service): JsonResponse
     {
         $rows = $service->products($request->menuContext(), $request->query('category_id'));
@@ -71,6 +80,14 @@ class MenuController extends Controller
         return response()->json(['data' => MenuResource::product($model)]);
     }
 
+    public function destroyProduct(string $product, DeletionRequest $request, MenuService $service): JsonResponse
+    {
+        $service->deleteProduct($request->menuContext(), $product,
+            (int) $request->validated('expected_version'));
+
+        return response()->json(status: 204);
+    }
+
     public function storeVariant(string $product, VariantRequest $request, MenuService $service): JsonResponse
     {
         $variant = $service->createVariant($request->menuContext(), $product, $request->validated());
@@ -84,6 +101,14 @@ class MenuController extends Controller
             (int) $request->validated('expected_version'), $request->validated());
 
         return response()->json(['data' => MenuResource::variant($model)]);
+    }
+
+    public function destroyVariant(string $product, string $variant, DeletionRequest $request, MenuService $service): JsonResponse
+    {
+        $service->deleteVariant($request->menuContext(), $product, $variant,
+            (int) $request->validated('expected_version'));
+
+        return response()->json(status: 204);
     }
 
     public function modifierGroups(MenuRequest $request, MenuService $service): JsonResponse

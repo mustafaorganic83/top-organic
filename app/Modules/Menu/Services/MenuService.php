@@ -26,6 +26,8 @@ final class MenuService
 {
     use GuardsMenuWrites;
 
+    public function __construct(private readonly DishDeletionGuard $deletionGuard) {}
+
     /** @return Collection<int, Category> */
     public function categories(MenuContext $context): Collection
     {
@@ -164,6 +166,44 @@ final class MenuService
             $variant->save();
 
             return $variant->refresh();
+        }, 3);
+    }
+
+    /**
+     * Soft-delete a dish once the referential guards pass. Dishes with billed
+     * history are never deletable — retire them by setting status instead.
+     */
+    public function deleteProduct(MenuContext $context, string $id, int $version): void
+    {
+        DB::transaction(function () use ($context, $id, $version): void {
+            $product = $this->find(Product::class, $context->tenantId, $id);
+            $this->assertVersion($product->lock_version, $version);
+            $this->deletionGuard->assertProductDeletable($context, $product->id);
+            $product->delete();
+        }, 3);
+    }
+
+    /** Soft-delete a meal-size variant once its referential guards pass. */
+    public function deleteVariant(MenuContext $context, string $productId, string $variantId, int $version): void
+    {
+        DB::transaction(function () use ($context, $productId, $variantId, $version): void {
+            $variant = ProductVariant::withoutGlobalScopes()->where('tenant_id', $context->tenantId)
+                ->where('product_id', $productId)->whereKey($variantId)->lockForUpdate()->first()
+                ?? throw MenuException::notFound('The variant was not found.');
+            $this->assertVersion($variant->lock_version, $version);
+            $this->deletionGuard->assertVariantDeletable($context, $variant->id);
+            $variant->delete();
+        }, 3);
+    }
+
+    /** Soft-delete an empty category. */
+    public function deleteCategory(MenuContext $context, string $id, int $version): void
+    {
+        DB::transaction(function () use ($context, $id, $version): void {
+            $category = $this->find(Category::class, $context->tenantId, $id);
+            $this->assertVersion($category->lock_version, $version);
+            $this->deletionGuard->assertCategoryDeletable($context, $category->id);
+            $category->delete();
         }, 3);
     }
 

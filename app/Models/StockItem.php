@@ -35,4 +35,11 @@ class StockItem extends TenantScopedModel
         return $this->hasMany(EntityAllergen::class, 'entity_id')
             ->where('entity_type', 'stock_item');
     }
+
+    /** Every BOM line that consumes this ingredient, across all versions. */
+    public function recipeComponents(): HasMany
+    {
+        return $this->hasMany(RecipeComponent::class, 'component_id')
+            ->where('component_type', 'stock_item');
+    }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Menu\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Menu\Http\Requests\DeletionRequest;
 use App\Modules\Menu\Http\Requests\IngredientRequest;
 use App\Modules\Menu\Http\Requests\MenuRequest;
 use App\Modules\Menu\Http\Resources\MenuResource;
@@ -38,6 +39,14 @@ class IngredientController extends Controller
         return response()->json(['data' => MenuResource::stockItem($item)]);
     }
 
+    public function destroy(string $ingredient, DeletionRequest $request, IngredientService $service): JsonResponse
+    {
+        $service->deleteStockItem($request->menuContext(), $ingredient,
+            (int) $request->validated('expected_version'));
+
+        return response()->json(status: 204);
+    }
+
     public function semiFinished(MenuRequest $request, IngredientService $service): JsonResponse
     {
         $rows = $service->semiFinished($request->menuContext());
@@ -57,5 +66,25 @@ class IngredientController extends Controller
             'id' => $item->id, 'sku' => $item->sku, 'name' => $item->name,
             'yield_unit' => $item->yield_unit, 'yield_quantity' => $item->yield_quantity,
         ]], 201);
+    }
+
+    public function updateSemiFinished(string $semiFinished, IngredientRequest $request, IngredientService $service): JsonResponse
+    {
+        $item = $service->updateSemiFinished($request->menuContext(), $semiFinished,
+            (int) $request->validated('expected_version'), $request->validated());
+
+        return response()->json(['data' => [
+            'id' => $item->id, 'sku' => $item->sku, 'name' => $item->name,
+            'yield_unit' => $item->yield_unit, 'yield_quantity' => $item->yield_quantity,
+            'status' => $item->status, 'lock_version' => $item->lock_version,
+        ]]);
+    }
+
+    public function destroySemiFinished(string $semiFinished, DeletionRequest $request, IngredientService $service): JsonResponse
+    {
+        $service->deleteSemiFinished($request->menuContext(), $semiFinished,
+            (int) $request->validated('expected_version'));
+
+        return response()->json(status: 204);
     }
 }

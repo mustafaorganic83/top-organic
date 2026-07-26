@@ -11,7 +11,10 @@
         "laravel/reverb": "^1.10",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
-        "php-open-source-saver/jwt-auth": "^2.9"
+        "livewire/livewire": "^3.6",
+        "mpdf/mpdf": "^8.2",
+        "php-open-source-saver/jwt-auth": "^2.9",
+        "phpoffice/phpspreadsheet": "^2.3"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

@@ -22,6 +22,8 @@ final class IngredientService
 {
     use GuardsMenuWrites;
 
+    public function __construct(private readonly DishDeletionGuard $deletionGuard) {}
+
     /** @return Collection<int, StockItem> */
     public function stockItems(MenuContext $context): Collection
     {
@@ -69,6 +71,19 @@ final class IngredientService
         }, 3);
     }
 
+    /** Soft-delete an ingredient that no recipe version references. */
+    public function deleteStockItem(MenuContext $context, string $id, int $version): void
+    {
+        DB::transaction(function () use ($context, $id, $version): void {
+            $item = StockItem::withoutGlobalScopes()->where('tenant_id', $context->tenantId)
+                ->whereKey($id)->lockForUpdate()->first()
+                ?? throw MenuException::notFound('The ingredient was not found.');
+            $this->assertVersion($item->lock_version, $version);
+            $this->deletionGuard->assertStockItemDeletable($context, $item->id);
+            $item->delete();
+        }, 3);
+    }
+
     /** @return Collection<int, SemiFinishedProduct> */
     public function semiFinished(MenuContext $context): Collection
     {
@@ -92,5 +107,36 @@ final class IngredientService
             'status' => $data['status'] ?? 'active',
             'lock_version' => 0,
         ]);
+    }
+
+    /** @param array<string, mixed> $data */
+    public function updateSemiFinished(MenuContext $context, string $id, int $version, array $data): SemiFinishedProduct
+    {
+        return DB::transaction(function () use ($context, $id, $version, $data): SemiFinishedProduct {
+            $item = SemiFinishedProduct::withoutGlobalScopes()->where('tenant_id', $context->tenantId)
+                ->whereKey($id)->lockForUpdate()->first()
+                ?? throw MenuException::notFound('The prepared item was not found.');
+            $this->assertVersion($item->lock_version, $version);
+            $item->fill(array_intersect_key($data, array_flip([
+                'name', 'yield_unit', 'yield_quantity', 'calories_per_unit', 'nutrition', 'status',
+            ])));
+            $item->lock_version++;
+            $item->save();
+
+            return $item->refresh();
+        }, 3);
+    }
+
+    /** Soft-delete a prepared item that is neither consumed nor owns a recipe. */
+    public function deleteSemiFinished(MenuContext $context, string $id, int $version): void
+    {
+        DB::transaction(function () use ($context, $id, $version): void {
+            $item = SemiFinishedProduct::withoutGlobalScopes()->where('tenant_id', $context->tenantId)
+                ->whereKey($id)->lockForUpdate()->first()
+                ?? throw MenuException::notFound('The prepared item was not found.');
+            $this->assertVersion($item->lock_version, $version);
+            $this->deletionGuard->assertSemiFinishedDeletable($context, $item->id);
+            $item->delete();
+        }, 3);
     }
 }

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -53,5 +54,21 @@ class Product extends TenantScopedModel
     {
         return $this->hasMany(EntityAllergen::class, 'entity_id')
             ->where('entity_type', 'product');
+    }
+
+    /**
+     * The recipes of this dish, one per meal-size variant. Recipes hang off
+     * product_variants, so they are reached through the variant.
+     */
+    public function recipes(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            Recipe::class,
+            ProductVariant::class,
+            'product_id',
+            'owner_id',
+            'id',
+            'id',
+        )->where('recipes.owner_type', 'product_variant');
     }
 }
