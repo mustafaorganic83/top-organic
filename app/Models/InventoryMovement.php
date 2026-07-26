@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 /**
@@ -24,4 +25,15 @@ class InventoryMovement extends BranchScopedModel
     {
         return $this->morphTo(null, 'stockable_type', 'stockable_id');
     }
+
+    public function warehouse(): BelongsTo
+    {
+        return $this->belongsTo(Warehouse::class);
+    }
+
+    // Scopes
+    public function scopeReceipts($q) { return $q->where('quantity_delta', '>', 0); }
+    public function scopeIssues($q) { return $q->where('quantity_delta', '<', 0); }
+    public function scopeForWarehouse($q, string $warehouseId) { return $q->where('warehouse_id', $warehouseId); }
+    public function scopeByReason($q, string $reason) { return $q->where('reason', $reason); }
 }

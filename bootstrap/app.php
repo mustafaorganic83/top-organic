@@ -5,6 +5,7 @@ use App\Http\Middleware\RequirePermission;
 use App\Http\Middleware\RequirePosDevice;
 use App\Http\Middleware\ResolveContext;
 use App\Http\Middleware\SetLocale;
+use Illuminate\Http\Middleware\HandleCors;
 use App\Modules\Accounting\Exceptions\AccountingException;
 use App\Modules\Identity\Exceptions\IdentityException;
 use App\Modules\Inventory\Exceptions\InventoryException;
@@ -31,6 +32,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(SetLocale::class);
+        $middleware->append(HandleCors::class);
         $middleware->redirectGuestsTo(fn (Request $request): ?string => $request->is('api/*') ? null : '/login');
 
         $middleware->alias([

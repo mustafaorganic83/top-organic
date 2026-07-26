@@ -12,7 +12,6 @@
 
 # Node / assets
 /node_modules/
-/public/build
 npm-debug.log*
 yarn-error.log
 
@@ -20,7 +19,6 @@ yarn-error.log
 .dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies
-build/
 *.iml
 
 # Environment variables
